@@ -1,0 +1,1883 @@
+{
+  "version": "1.0.0",
+  "generated": "2026-02-10T17:14:41.740Z",
+  "stack": {
+    "primaryLanguage": "typescript",
+    "languages": [
+      "javascript",
+      "typescript"
+    ],
+    "frameworks": [],
+    "buildTools": [
+      "vite"
+    ],
+    "testFrameworks": [],
+    "packageManager": "npm",
+    "isMonorepo": false,
+    "hasDocker": false,
+    "hasCI": false
+  },
+  "structure": {
+    "totalFiles": 937,
+    "topDirectories": [
+      {
+        "name": "260206-1252-wws-hub.zip",
+        "fileCount": 1
+      },
+      {
+        "name": "260206-1428-wws-hub.zip",
+        "fileCount": 1
+      },
+      {
+        "name": "260209-1654.zip",
+        "fileCount": 1
+      },
+      {
+        "name": "260210-0826.zip",
+        "fileCount": 1
+      },
+      {
+        "name": "docs",
+        "fileCount": 34
+      },
+      {
+        "name": "eslint.config.js",
+        "fileCount": 1
+      },
+      {
+        "name": "index.html",
+        "fileCount": 1
+      },
+      {
+        "name": "package-lock.json",
+        "fileCount": 1
+      },
+      {
+        "name": "package.json",
+        "fileCount": 1
+      },
+      {
+        "name": "postcss.config.js",
+        "fileCount": 1
+      },
+      {
+        "name": "public",
+        "fileCount": 2
+      },
+      {
+        "name": "README.md",
+        "fileCount": 1
+      },
+      {
+        "name": "server.mjs",
+        "fileCount": 1
+      },
+      {
+        "name": "src",
+        "fileCount": 720
+      },
+      {
+        "name": "supabase",
+        "fileCount": 165
+      },
+      {
+        "name": "tailwind.config.js",
+        "fileCount": 1
+      },
+      {
+        "name": "tsconfig.app.json",
+        "fileCount": 1
+      },
+      {
+        "name": "tsconfig.json",
+        "fileCount": 1
+      },
+      {
+        "name": "tsconfig.node.json",
+        "fileCount": 1
+      },
+      {
+        "name": "vite.config.ts",
+        "fileCount": 1
+      }
+    ],
+    "languageDistribution": [
+      {
+        "extension": ".tsx",
+        "count": 401
+      },
+      {
+        "extension": ".sql",
+        "count": 319
+      },
+      {
+        "extension": ".ts",
+        "count": 99
+      },
+      {
+        "extension": ".md",
+        "count": 38
+      },
+      {
+        "extension": ".js",
+        "count": 25
+      },
+      {
+        "extension": ".json",
+        "count": 24
+      },
+      {
+        "extension": ".html",
+        "count": 5
+      },
+      {
+        "extension": ".css",
+        "count": 5
+      },
+      {
+        "extension": ".zip",
+        "count": 4
+      },
+      {
+        "extension": ".png",
+        "count": 3
+      }
+    ]
+  },
+  "architecture": {
+    "layers": [
+      {
+        "name": "Config",
+        "description": "Configuration and constants",
+        "directories": [
+          ".",
+          "src\\modules\\ti",
+          "src\\modules\\financas"
+        ],
+        "symbolCount": 5,
+        "dependsOn": []
+      },
+      {
+        "name": "Repositories",
+        "description": "Data access and persistence",
+        "directories": [
+          "src\\types",
+          "src\\components\\Comercialpublico2\\src\\lib",
+          "src\\components\\Comercialpublico2\\src\\data",
+          "src\\components\\Comercialprivado2\\src\\lib",
+          "src\\modules\\financas\\components\\Features\\contract_sheets",
+          "src\\components\\okr"
+        ],
+        "symbolCount": 47,
+        "dependsOn": []
+      },
+      {
+        "name": "Services",
+        "description": "Business logic and orchestration",
+        "directories": [
+          "src\\services",
+          "src\\modules\\financas\\services",
+          "src\\components\\Comercialpublico2\\src\\services",
+          "src\\components\\Comercialprivado2\\src\\services",
+          "src\\components\\Comercialprivado2\\src\\components\\Orçamentos\\src\\services"
+        ],
+        "symbolCount": 64,
+        "dependsOn": [
+          "Components"
+        ]
+      },
+      {
+        "name": "Utils",
+        "description": "Shared utilities and helpers",
+        "directories": [
+          "src\\lib",
+          "src\\modules\\financas",
+          "src\\components\\Comercialpublico2\\src\\utils",
+          "src\\components\\Comercialpublico2\\src\\lib",
+          "src\\components\\Comercialprivado2\\src\\utils",
+          "src\\components\\Comercialprivado2\\src\\lib",
+          "src\\modules\\financas\\components\\Features\\contract_sheets",
+          "src\\components\\Comercialpublico2\\src\\lib\\proposals",
+          "src\\components\\Comercialprivado2\\src\\components\\Orçamentos\\src",
+          "src\\components\\Comercialprivado2\\src\\components\\Orçamentos\\src\\utils",
+          "src\\components\\Comercialprivado2\\src\\components\\Orçamentos\\src\\lib",
+          "src\\components\\Comercialpublico2\\src\\components\\Dashboard",
+          "src\\components\\Comercialpublico2\\src\\components\\common"
+        ],
+        "symbolCount": 75,
+        "dependsOn": [
+          "Components",
+          "Controllers"
+        ]
+      },
+      {
+        "name": "Components",
+        "description": "UI components and views",
+        "directories": [
+          "src\\components\\ui",
+          "src\\components\\Comercialpublico2",
+          "src\\components\\Comercialprivado2",
+          "src\\modules\\financas\\pages",
+          "src\\components\\Comercialpublico2\\src",
+          "src\\components\\Comercialprivado2\\src",
+          "src\\components\\Comercialpublico2\\src\\types",
+          "src\\components\\Comercialpublico2\\src\\hooks",
+          "src\\components\\Comercialpublico2\\src\\constants",
+          "src\\components\\Comercialprivado2\\src\\types",
+          "src\\components\\Comercialprivado2\\src\\hooks",
+          "src\\components\\Comercialpublico2\\supabase\\functions\\notificar_proxima_acao",
+          "src\\components\\Comercialprivado2\\src\\components\\Orçamentos",
+          "src\\components\\Comercialprivado2\\src\\components\\Budgets",
+          "src\\components\\Comercialprivado2\\src\\components\\Orçamentos\\src",
+          "src\\pages",
+          "src\\components",
+          "src\\components\\okr",
+          "src\\components\\layout",
+          "src\\components\\indicators",
+          "src\\components\\dashboard",
+          "src\\components\\cultura",
+          "src\\components\\contracts",
+          "src\\components\\config",
+          "src\\components\\chat",
+          "src\\components\\charts",
+          "src\\components\\auth",
+          "src\\components\\atas",
+          "src\\components\\actions",
+          "src\\modules\\ti\\components",
+          "src\\modules\\financas\\components",
+          "src\\modules\\qualidade\\components",
+          "src\\modules\\financas\\components\\Features",
+          "src\\modules\\qualidade\\components\\tabs",
+          "src\\components\\Comercialpublico2\\src\\contexts",
+          "src\\components\\Comercialprivado2\\src\\contexts",
+          "src\\components\\Comercialprivado2\\src\\components",
+          "src\\modules\\financas\\components\\Features\\statement",
+          "src\\modules\\financas\\components\\Features\\simulations",
+          "src\\modules\\financas\\components\\Features\\settings",
+          "src\\modules\\financas\\components\\Features\\loans",
+          "src\\modules\\financas\\components\\Features\\kpis",
+          "src\\modules\\financas\\components\\Features\\files",
+          "src\\modules\\financas\\components\\Features\\delinquent",
+          "src\\modules\\financas\\components\\Features\\dashboard",
+          "src\\modules\\financas\\components\\Features\\contract_sheets",
+          "src\\modules\\financas\\components\\Features\\contract_analysis",
+          "src\\modules\\financas\\components\\Features\\Coa",
+          "src\\modules\\financas\\components\\Features\\budget",
+          "src\\components\\Comercialpublico2\\src\\components\\UserManagement",
+          "src\\components\\Comercialpublico2\\src\\components\\Tarefas",
+          "src\\components\\Comercialpublico2\\src\\components\\Settings",
+          "src\\components\\Comercialpublico2\\src\\components\\Rewards",
+          "src\\components\\Comercialpublico2\\src\\components\\Recognition",
+          "src\\components\\Comercialpublico2\\src\\components\\Rankings",
+          "src\\components\\Comercialpublico2\\src\\components\\Orcamentos",
+          "src\\components\\Comercialpublico2\\src\\components\\Notificacoes",
+          "src\\components\\Comercialpublico2\\src\\components\\Licitacoes",
+          "src\\components\\Comercialpublico2\\src\\components\\Layout",
+          "src\\components\\Comercialpublico2\\src\\components\\Employees",
+          "src\\components\\Comercialpublico2\\src\\components\\Dashboard",
+          "src\\components\\Comercialpublico2\\src\\components\\Contracts",
+          "src\\components\\Comercialpublico2\\src\\components\\Commissions",
+          "src\\components\\Comercialpublico2\\src\\components\\Challenges",
+          "src\\components\\Comercialpublico2\\src\\components\\Certidoes",
+          "src\\components\\Comercialpublico2\\src\\components\\Campaigns",
+          "src\\components\\Comercialpublico2\\src\\components\\BonusFund",
+          "src\\components\\Comercialpublico2\\src\\components\\Auth",
+          "src\\components\\Comercialprivado2\\src\\components\\UserManagement",
+          "src\\components\\Comercialprivado2\\src\\components\\Tasks",
+          "src\\components\\Comercialprivado2\\src\\components\\Settings",
+          "src\\components\\Comercialprivado2\\src\\components\\Proposals",
+          "src\\components\\Comercialprivado2\\src\\components\\Marketing",
+          "src\\components\\Comercialprivado2\\src\\components\\Layout",
+          "src\\components\\Comercialprivado2\\src\\components\\KPIs",
+          "src\\components\\Comercialprivado2\\src\\components\\Employees",
+          "src\\components\\Comercialprivado2\\src\\components\\Dashboard",
+          "src\\components\\Comercialprivado2\\src\\components\\CommercialGoals",
+          "src\\components\\Comercialprivado2\\src\\components\\Challenges",
+          "src\\components\\Comercialprivado2\\src\\components\\Commissions",
+          "src\\components\\Comercialprivado2\\src\\components\\BonusFund",
+          "src\\components\\Comercialprivado2\\src\\components\\Atas",
+          "src\\components\\Comercialprivado2\\src\\components\\Actions",
+          "src\\modules\\financas\\components\\Features\\kpis\\components",
+          "src\\modules\\financas\\components\\Features\\files\\components",
+          "src\\components\\Comercialprivado2\\src\\components\\Orçamentos\\src\\components",
+          "src\\components\\Comercialprivado2\\src\\components\\Orçamentos\\src\\components\\tabs",
+          "src\\components\\Comercialprivado2\\src\\components\\Orçamentos\\src\\components\\tabs\\settings",
+          "src\\components\\Comercialpublico2\\scripts"
+        ],
+        "symbolCount": 558,
+        "dependsOn": [
+          "Config",
+          "Utils",
+          "Controllers"
+        ]
+      },
+      {
+        "name": "Controllers",
+        "description": "Request handling and routing",
+        "directories": [
+          "src\\components\\Comercialprivado2\\src\\utils",
+          "src\\components\\Comercialprivado2\\src\\components\\Tasks"
+        ],
+        "symbolCount": 11,
+        "dependsOn": [
+          "Components"
+        ]
+      }
+    ],
+    "patterns": [
+      {
+        "name": "Service Layer",
+        "confidence": 0.85,
+        "description": "Encapsulates business logic in service classes",
+        "occurrences": 3
+      }
+    ],
+    "entryPoints": [
+      "supabase\\functions\\importar-dre\\index.ts",
+      "src\\modules\\financas\\index.ts",
+      "src\\modules\\financas\\types\\index.ts",
+      "src\\modules\\financas\\services\\index.ts",
+      "src\\modules\\financas\\pages\\index.ts",
+      "src\\modules\\financas\\layout\\index.ts",
+      "src\\modules\\financas\\hooks\\index.ts",
+      "src\\components\\Comercialpublico2\\src\\types\\index.ts",
+      "src\\components\\Comercialprivado2\\src\\types\\index.ts",
+      "src\\components\\Comercialpublico2\\supabase\\functions\\notificar_proxima_acao\\index.ts",
+      "src\\main.tsx",
+      "src\\modules\\financas\\index.tsx",
+      "src\\components\\Comercialpublico2\\src\\main.tsx",
+      "src\\components\\Comercialprivado2\\src\\main.tsx",
+      "src\\components\\Comercialprivado2\\src\\components\\Orçamentos\\src\\main.tsx"
+    ]
+  },
+  "symbols": {
+    "classes": [
+      {
+        "name": "AIChatService",
+        "kind": "class",
+        "file": "src\\services\\aiChatService.ts",
+        "line": 9,
+        "exported": true
+      },
+      {
+        "name": "DashboardService",
+        "kind": "class",
+        "file": "src\\services\\dashboardService.ts",
+        "line": 9,
+        "exported": true
+      },
+      {
+        "name": "DRESpreadsheetService",
+        "kind": "class",
+        "file": "src\\services\\dreSpreadsheetService.ts",
+        "line": 9,
+        "exported": true
+      },
+      {
+        "name": "ErrorBoundary",
+        "kind": "class",
+        "file": "src\\components\\Comercialpublico2\\src\\components\\common\\ErrorBoundary.tsx",
+        "line": 11,
+        "exported": true
+      }
+    ],
+    "interfaces": [
+      {
+        "name": "Action",
+        "kind": "interface",
+        "file": "src\\components\\Comercialprivado2\\src\\services\\actionsService.ts",
+        "line": 3,
+        "exported": true
+      },
+      {
+        "name": "Action",
+        "kind": "interface",
+        "file": "src\\pages\\AtasAcoesPage.tsx",
+        "line": 12,
+        "exported": true
+      },
+      {
+        "name": "ActionComment",
+        "kind": "interface",
+        "file": "src\\components\\Comercialprivado2\\src\\services\\actionsService.ts",
+        "line": 20,
+        "exported": true
+      },
+      {
+        "name": "AppUser",
+        "kind": "interface",
+        "file": "src\\hooks\\useAuth.ts",
+        "line": 8,
+        "exported": true
+      },
+      {
+        "name": "AtaAnaliseCritica",
+        "kind": "interface",
+        "file": "src\\modules\\qualidade\\types.ts",
+        "line": 161,
+        "exported": true
+      },
+      {
+        "name": "Badge",
+        "kind": "interface",
+        "file": "src\\components\\Comercialpublico2\\src\\types\\index.ts",
+        "line": 14,
+        "exported": true
+      },
+      {
+        "name": "Badge",
+        "kind": "interface",
+        "file": "src\\components\\Comercialprivado2\\src\\types\\index.ts",
+        "line": 14,
+        "exported": true
+      },
+      {
+        "name": "Benefit",
+        "kind": "interface",
+        "file": "src\\components\\Comercialprivado2\\src\\components\\Orçamentos\\src\\types.ts",
+        "line": 44,
+        "exported": true
+      },
+      {
+        "name": "BenefitOverride",
+        "kind": "interface",
+        "file": "src\\components\\Comercialprivado2\\src\\components\\Orçamentos\\src\\services\\budgetBenefitsService.ts",
+        "line": 3,
+        "exported": true
+      },
+      {
+        "name": "BonusContribution",
+        "kind": "interface",
+        "file": "src\\components\\Comercialpublico2\\src\\types\\index.ts",
+        "line": 173,
+        "exported": true
+      },
+      {
+        "name": "BonusContribution",
+        "kind": "interface",
+        "file": "src\\components\\Comercialprivado2\\src\\types\\index.ts",
+        "line": 136,
+        "exported": true
+      },
+      {
+        "name": "BonusEmployee",
+        "kind": "interface",
+        "file": "src\\components\\Comercialpublico2\\src\\types\\index.ts",
+        "line": 184,
+        "exported": true
+      },
+      {
+        "name": "BonusEmployee",
+        "kind": "interface",
+        "file": "src\\components\\Comercialprivado2\\src\\types\\index.ts",
+        "line": 147,
+        "exported": true
+      },
+      {
+        "name": "BonusFund",
+        "kind": "interface",
+        "file": "src\\components\\Comercialpublico2\\src\\types\\index.ts",
+        "line": 167,
+        "exported": true
+      },
+      {
+        "name": "BonusFund",
+        "kind": "interface",
+        "file": "src\\components\\Comercialprivado2\\src\\types\\index.ts",
+        "line": 130,
+        "exported": true
+      },
+      {
+        "name": "BscFoundation",
+        "kind": "interface",
+        "file": "src\\types\\database.ts",
+        "line": 290,
+        "exported": true
+      },
+      {
+        "name": "BscItem",
+        "kind": "interface",
+        "file": "src\\types\\database.ts",
+        "line": 276,
+        "exported": true
+      },
+      {
+        "name": "Budget",
+        "kind": "interface",
+        "file": "src\\components\\Comercialprivado2\\src\\components\\Orçamentos\\src\\types.ts",
+        "line": 70,
+        "exported": true
+      },
+      {
+        "name": "ButtonProps",
+        "kind": "interface",
+        "file": "src\\components\\ui\\button.tsx",
+        "line": 36,
+        "exported": true
+      },
+      {
+        "name": "Campaign",
+        "kind": "interface",
+        "file": "src\\components\\Comercialpublico2\\src\\types\\index.ts",
+        "line": 22,
+        "exported": true
+      },
+      {
+        "name": "Campaign",
+        "kind": "interface",
+        "file": "src\\components\\Comercialprivado2\\src\\types\\index.ts",
+        "line": 22,
+        "exported": true
+      },
+      {
+        "name": "CapexData",
+        "kind": "interface",
+        "file": "src\\components\\Comercialprivado2\\src\\components\\Orçamentos\\src\\components\\CapexModal.tsx",
+        "line": 14,
+        "exported": true
+      },
+      {
+        "name": "CategoriaDRE",
+        "kind": "interface",
+        "file": "src\\modules\\financas\\types.ts",
+        "line": 115,
+        "exported": true
+      },
+      {
+        "name": "CategoryNode",
+        "kind": "interface",
+        "file": "src\\modules\\financas\\types.ts",
+        "line": 124,
+        "exported": true
+      },
+      {
+        "name": "CategoryRow",
+        "kind": "interface",
+        "file": "src\\modules\\financas\\components\\Features\\contract_sheets\\sheetDetailUtils.ts",
+        "line": 3,
+        "exported": true
+      },
+      {
+        "name": "Challenge",
+        "kind": "interface",
+        "file": "src\\components\\Comercialpublico2\\src\\types\\index.ts",
+        "line": 150,
+        "exported": true
+      },
+      {
+        "name": "Challenge",
+        "kind": "interface",
+        "file": "src\\components\\Comercialprivado2\\src\\types\\index.ts",
+        "line": 113,
+        "exported": true
+      },
+      {
+        "name": "Chamado",
+        "kind": "interface",
+        "file": "src\\modules\\ti\\types.ts",
+        "line": 13,
+        "exported": true
+      },
+      {
+        "name": "ChamadoHistoricoItem",
+        "kind": "interface",
+        "file": "src\\modules\\ti\\types.ts",
+        "line": 3,
+        "exported": true
+      },
+      {
+        "name": "ChartDataPoint",
+        "kind": "interface",
+        "file": "src\\types\\database.ts",
+        "line": 60,
+        "exported": true
+      },
+      {
+        "name": "ChatMessage",
+        "kind": "interface",
+        "file": "src\\services\\aiChatService.ts",
+        "line": 3,
+        "exported": true
+      },
+      {
+        "name": "CleaningMaterialsTableRow",
+        "kind": "interface",
+        "file": "src\\types\\database.ts",
+        "line": 168,
+        "exported": true
+      },
+      {
+        "name": "Client",
+        "kind": "interface",
+        "file": "src\\types\\database.ts",
+        "line": 110,
+        "exported": true
+      },
+      {
+        "name": "ClientMetadata",
+        "kind": "interface",
+        "file": "src\\modules\\financas\\types.ts",
+        "line": 49,
+        "exported": true
+      },
+      {
+        "name": "ClientVisitsTableRow",
+        "kind": "interface",
+        "file": "src\\types\\database.ts",
+        "line": 345,
+        "exported": true
+      },
+      {
+        "name": "CloserStats",
+        "kind": "interface",
+        "file": "src\\components\\Comercialpublico2\\src\\types\\index.ts",
+        "line": 129,
+        "exported": true
+      },
+      {
+        "name": "CloserStats",
+        "kind": "interface",
+        "file": "src\\components\\Comercialprivado2\\src\\types\\index.ts",
+        "line": 95,
+        "exported": true
+      },
+      {
+        "name": "CoaNode",
+        "kind": "interface",
+        "file": "src\\modules\\financas\\types.ts",
+        "line": 39,
+        "exported": true
+      },
+      {
+        "name": "CombustivelTableRow",
+        "kind": "interface",
+        "file": "src\\types\\database.ts",
+        "line": 225,
+        "exported": true
+      },
+      {
+        "name": "CommissionTier",
+        "kind": "interface",
+        "file": "src\\components\\Comercialpublico2\\src\\utils\\commissionUtils.ts",
+        "line": 5,
+        "exported": true
+      },
+      {
+        "name": "CommissionTier",
+        "kind": "interface",
+        "file": "src\\components\\Comercialpublico2\\src\\services\\configurationService.ts",
+        "line": 9,
+        "exported": true
+      },
+      {
+        "name": "CommissionTier",
+        "kind": "interface",
+        "file": "src\\components\\Comercialprivado2\\src\\utils\\commissionUtils.ts",
+        "line": 4,
+        "exported": true
+      },
+      {
+        "name": "CommissionTier",
+        "kind": "interface",
+        "file": "src\\components\\Comercialprivado2\\src\\services\\configurationService.ts",
+        "line": 12,
+        "exported": true
+      },
+      {
+        "name": "ComSales",
+        "kind": "interface",
+        "file": "src\\types\\database.ts",
+        "line": 29,
+        "exported": true
+      },
+      {
+        "name": "ConfigBenefit",
+        "kind": "interface",
+        "file": "src\\components\\Comercialprivado2\\src\\components\\Orçamentos\\src\\types.ts",
+        "line": 107,
+        "exported": true
+      },
+      {
+        "name": "ConfigFunction",
+        "kind": "interface",
+        "file": "src\\components\\Comercialprivado2\\src\\components\\Orçamentos\\src\\types.ts",
+        "line": 95,
+        "exported": true
+      },
+      {
+        "name": "ContextoParteInteressada",
+        "kind": "interface",
+        "file": "src\\modules\\qualidade\\types.ts",
+        "line": 24,
+        "exported": true
+      },
+      {
+        "name": "Contract",
+        "kind": "interface",
+        "file": "src\\lib\\contractUtils.ts",
+        "line": 3,
+        "exported": true
+      },
+      {
+        "name": "Contract",
+        "kind": "interface",
+        "file": "src\\modules\\financas\\types.ts",
+        "line": 62,
+        "exported": true
+      },
+      {
+        "name": "Contract",
+        "kind": "interface",
+        "file": "src\\components\\Comercialpublico2\\src\\types\\contracts.ts",
+        "line": 1,
+        "exported": true
+      }
+    ],
+    "functions": [
+      {
+        "name": "AddBookLoanModal",
+        "kind": "function",
+        "file": "src\\components\\cultura\\AddBookLoanModal.tsx",
+        "line": 15,
+        "exported": true
+      },
+      {
+        "name": "addDays",
+        "kind": "function",
+        "file": "src\\modules\\financas\\utils.ts",
+        "line": 245,
+        "exported": true
+      },
+      {
+        "name": "AdminSupabaseStatusFloating",
+        "kind": "function",
+        "file": "src\\components\\AdminSupabaseStatusFloating.tsx",
+        "line": 7,
+        "exported": true
+      },
+      {
+        "name": "applyDefaultOrder",
+        "kind": "function",
+        "file": "src\\components\\Comercialpublico2\\src\\utils\\sortPropostas.ts",
+        "line": 13,
+        "exported": true
+      },
+      {
+        "name": "badgeByDeadline",
+        "kind": "function",
+        "file": "src\\components\\Comercialpublico2\\src\\utils\\datetime.ts",
+        "line": 39,
+        "exported": true
+      },
+      {
+        "name": "buscarDREPorContrato",
+        "kind": "function",
+        "file": "src\\services\\dreService.ts",
+        "line": 24,
+        "exported": true
+      },
+      {
+        "name": "calculateContractDuration",
+        "kind": "function",
+        "file": "src\\components\\Comercialpublico2\\src\\utils\\contractDuration.ts",
+        "line": 6,
+        "exported": true
+      },
+      {
+        "name": "calculateDurationInMonths",
+        "kind": "function",
+        "file": "src\\lib\\contractUtils.ts",
+        "line": 205,
+        "exported": true
+      },
+      {
+        "name": "calculateMonthsBetween",
+        "kind": "function",
+        "file": "src\\components\\Comercialpublico2\\src\\utils\\contractDuration.ts",
+        "line": 1,
+        "exported": true
+      },
+      {
+        "name": "calculateMonthsRemaining",
+        "kind": "function",
+        "file": "src\\components\\Comercialpublico2\\src\\utils\\contractDuration.ts",
+        "line": 13,
+        "exported": true
+      },
+      {
+        "name": "clearBudgetsQueryCache",
+        "kind": "function",
+        "file": "src\\components\\Comercialprivado2\\src\\components\\Budgets\\useBudgetsSupabase.ts",
+        "line": 121,
+        "exported": true
+      },
+      {
+        "name": "clearCostsCache",
+        "kind": "function",
+        "file": "src\\components\\Comercialprivado2\\src\\services\\costsService.ts",
+        "line": 140,
+        "exported": true
+      },
+      {
+        "name": "clearQueryCache",
+        "kind": "function",
+        "file": "src\\components\\Comercialpublico2\\src\\hooks\\useSupabase.ts",
+        "line": 138,
+        "exported": true
+      },
+      {
+        "name": "clearQueryCache",
+        "kind": "function",
+        "file": "src\\components\\Comercialprivado2\\src\\hooks\\useSupabase.ts",
+        "line": 128,
+        "exported": true
+      },
+      {
+        "name": "cn",
+        "kind": "function",
+        "file": "src\\lib\\utils.ts",
+        "line": 4,
+        "exported": true
+      },
+      {
+        "name": "cn",
+        "kind": "function",
+        "file": "src\\components\\Comercialpublico2\\src\\lib\\utils.ts",
+        "line": 4,
+        "exported": true
+      },
+      {
+        "name": "colorBySituacao",
+        "kind": "function",
+        "file": "src\\components\\Comercialpublico2\\src\\utils\\datetime.ts",
+        "line": 78,
+        "exported": true
+      },
+      {
+        "name": "ComercialPrivado2Embed",
+        "kind": "function",
+        "file": "src\\pages\\ComercialPrivado2Embed.tsx",
+        "line": 5,
+        "exported": true
+      },
+      {
+        "name": "ComercialPrivadoEmbed",
+        "kind": "function",
+        "file": "src\\pages\\ComercialPrivadoEmbed.tsx",
+        "line": 3,
+        "exported": true
+      },
+      {
+        "name": "ComercialPublico2Embed",
+        "kind": "function",
+        "file": "src\\pages\\ComercialPublico2Embed.tsx",
+        "line": 16,
+        "exported": true
+      },
+      {
+        "name": "ComercialPublicoEmbed",
+        "kind": "function",
+        "file": "src\\pages\\ComercialPublicoEmbed.tsx",
+        "line": 3,
+        "exported": true
+      },
+      {
+        "name": "computeProspectionPeriod",
+        "kind": "function",
+        "file": "src\\components\\Comercialprivado2\\src\\utils\\dateBr.ts",
+        "line": 10,
+        "exported": true
+      },
+      {
+        "name": "ConfiguracoesPage",
+        "kind": "function",
+        "file": "src\\pages\\ConfiguracoesPage.tsx",
+        "line": 7,
+        "exported": true
+      },
+      {
+        "name": "convertMonthYmsToMonthData",
+        "kind": "function",
+        "file": "src\\lib\\months.ts",
+        "line": 65,
+        "exported": true
+      },
+      {
+        "name": "daysDiffFromNow",
+        "kind": "function",
+        "file": "src\\components\\Comercialpublico2\\src\\utils\\datetime.ts",
+        "line": 23,
+        "exported": true
+      },
+      {
+        "name": "detectTemplate",
+        "kind": "function",
+        "file": "src\\components\\Comercialprivado2\\src\\utils\\ocrHandlers.ts",
+        "line": 48,
+        "exported": true
+      },
+      {
+        "name": "Dialog",
+        "kind": "function",
+        "file": "src\\components\\ui\\dialog.tsx",
+        "line": 11,
+        "exported": true
+      },
+      {
+        "name": "FinancasLayout",
+        "kind": "function",
+        "file": "src\\modules\\financas\\layout\\FinancasLayout.tsx",
+        "line": 7,
+        "exported": true
+      },
+      {
+        "name": "FinancasPage",
+        "kind": "function",
+        "file": "src\\pages\\FinancasPage.tsx",
+        "line": 3,
+        "exported": true
+      },
+      {
+        "name": "FinancasPage",
+        "kind": "function",
+        "file": "src\\modules\\financas\\pages\\FinancasPage.tsx",
+        "line": 3,
+        "exported": true
+      },
+      {
+        "name": "fmtBr",
+        "kind": "function",
+        "file": "src\\components\\Comercialprivado2\\src\\utils\\dateBr.ts",
+        "line": 55,
+        "exported": true
+      },
+      {
+        "name": "formatCostsPeriod",
+        "kind": "function",
+        "file": "src\\components\\Comercialprivado2\\src\\services\\costsService.ts",
+        "line": 148,
+        "exported": true
+      },
+      {
+        "name": "formatCurrency",
+        "kind": "function",
+        "file": "src\\lib\\contractUtils.ts",
+        "line": 46,
+        "exported": true
+      },
+      {
+        "name": "formatDateBR",
+        "kind": "function",
+        "file": "src\\lib\\contractUtils.ts",
+        "line": 53,
+        "exported": true
+      },
+      {
+        "name": "formatDateLocal",
+        "kind": "function",
+        "file": "src\\components\\Comercialpublico2\\src\\utils\\datetime.ts",
+        "line": 15,
+        "exported": true
+      },
+      {
+        "name": "formatDateTimeLocal",
+        "kind": "function",
+        "file": "src\\components\\Comercialpublico2\\src\\utils\\datetime.ts",
+        "line": 7,
+        "exported": true
+      },
+      {
+        "name": "formatMonthLabel",
+        "kind": "function",
+        "file": "src\\lib\\months.ts",
+        "line": 28,
+        "exported": true
+      },
+      {
+        "name": "getActivePunctualAddendum",
+        "kind": "function",
+        "file": "src\\lib\\contractUtils.ts",
+        "line": 66,
+        "exported": true
+      },
+      {
+        "name": "getClosestEndDate",
+        "kind": "function",
+        "file": "src\\lib\\contractUtils.ts",
+        "line": 172,
+        "exported": true
+      },
+      {
+        "name": "getCurrentEndDate",
+        "kind": "function",
+        "file": "src\\lib\\contractUtils.ts",
+        "line": 118,
+        "exported": true
+      },
+      {
+        "name": "getCurrentValue",
+        "kind": "function",
+        "file": "src\\lib\\contractUtils.ts",
+        "line": 100,
+        "exported": true
+      },
+      {
+        "name": "getCurrentYearMonth",
+        "kind": "function",
+        "file": "src\\lib\\months.ts",
+        "line": 34,
+        "exported": true
+      },
+      {
+        "name": "getDaysUntilEnd",
+        "kind": "function",
+        "file": "src\\lib\\contractUtils.ts",
+        "line": 139,
+        "exported": true
+      },
+      {
+        "name": "getLast12Months",
+        "kind": "function",
+        "file": "src\\lib\\months.ts",
+        "line": 10,
+        "exported": true
+      },
+      {
+        "name": "getMinimumWage",
+        "kind": "function",
+        "file": "src\\components\\Comercialprivado2\\src\\components\\Orçamentos\\src\\services\\systemConfigService.ts",
+        "line": 11,
+        "exported": true
+      },
+      {
+        "name": "getMonthsInRange",
+        "kind": "function",
+        "file": "src\\lib\\months.ts",
+        "line": 38,
+        "exported": true
+      },
+      {
+        "name": "getMostRecentPermanentAddendum",
+        "kind": "function",
+        "file": "src\\lib\\contractUtils.ts",
+        "line": 88,
+        "exported": true
+      },
+      {
+        "name": "getProspectionTeamKPIs",
+        "kind": "function",
+        "file": "src\\components\\Comercialprivado2\\src\\services\\prospectionKPIService.ts",
+        "line": 45,
+        "exported": true
+      },
+      {
+        "name": "getPunctualAddendumEndingSoon",
+        "kind": "function",
+        "file": "src\\lib\\contractUtils.ts",
+        "line": 157,
+        "exported": true
+      },
+      {
+        "name": "getRolling12MonthsCosts",
+        "kind": "function",
+        "file": "src\\components\\Comercialprivado2\\src\\services\\costsService.ts",
+        "line": 35,
+        "exported": true
+      }
+    ],
+    "types": [
+      {
+        "name": "AccessType",
+        "kind": "type",
+        "file": "src\\components\\Comercialpublico2\\src\\contexts\\AccessContext.tsx",
+        "line": 3,
+        "exported": true
+      },
+      {
+        "name": "BalancesByCompany",
+        "kind": "type",
+        "file": "src\\modules\\financas\\types.ts",
+        "line": 3,
+        "exported": true
+      },
+      {
+        "name": "CashSubView",
+        "kind": "type",
+        "file": "src\\modules\\financas\\types.ts",
+        "line": 7,
+        "exported": true
+      },
+      {
+        "name": "ChamadoEstimativa",
+        "kind": "type",
+        "file": "src\\modules\\ti\\chamadosConstants.ts",
+        "line": 34,
+        "exported": true
+      },
+      {
+        "name": "ChamadoModulo",
+        "kind": "type",
+        "file": "src\\modules\\ti\\chamadosConstants.ts",
+        "line": 31,
+        "exported": true
+      },
+      {
+        "name": "ChamadoPrioridade",
+        "kind": "type",
+        "file": "src\\modules\\ti\\chamadosConstants.ts",
+        "line": 5,
+        "exported": true
+      },
+      {
+        "name": "ChamadoStatus",
+        "kind": "type",
+        "file": "src\\modules\\ti\\chamadosConstants.ts",
+        "line": 9,
+        "exported": true
+      },
+      {
+        "name": "ChamadoTipo",
+        "kind": "type",
+        "file": "src\\modules\\ti\\chamadosConstants.ts",
+        "line": 2,
+        "exported": true
+      },
+      {
+        "name": "CityFilter",
+        "kind": "type",
+        "file": "src\\modules\\financas\\types.ts",
+        "line": 13,
+        "exported": true
+      },
+      {
+        "name": "ClientCategoryFilter",
+        "kind": "type",
+        "file": "src\\modules\\financas\\types.ts",
+        "line": 10,
+        "exported": true
+      },
+      {
+        "name": "ClientStatusFilter",
+        "kind": "type",
+        "file": "src\\modules\\financas\\types.ts",
+        "line": 11,
+        "exported": true
+      },
+      {
+        "name": "ClientType",
+        "kind": "type",
+        "file": "src\\modules\\financas\\types.ts",
+        "line": 8,
+        "exported": true
+      },
+      {
+        "name": "ClientTypeFilter",
+        "kind": "type",
+        "file": "src\\modules\\financas\\types.ts",
+        "line": 12,
+        "exported": true
+      },
+      {
+        "name": "CoaViewMode",
+        "kind": "type",
+        "file": "src\\modules\\financas\\types.ts",
+        "line": 6,
+        "exported": true
+      },
+      {
+        "name": "Company",
+        "kind": "type",
+        "file": "src\\modules\\financas\\types.ts",
+        "line": 2,
+        "exported": true
+      },
+      {
+        "name": "CostCenterCategory",
+        "kind": "type",
+        "file": "src\\modules\\financas\\types.ts",
+        "line": 9,
+        "exported": true
+      },
+      {
+        "name": "Department",
+        "kind": "type",
+        "file": "src\\components\\Comercialpublico2\\src\\contexts\\DepartmentContext.tsx",
+        "line": 3,
+        "exported": true
+      },
+      {
+        "name": "EmployeeName",
+        "kind": "type",
+        "file": "src\\components\\Comercialprivado2\\src\\services\\individualProspectionService.ts",
+        "line": 3,
+        "exported": true
+      },
+      {
+        "name": "FileType",
+        "kind": "type",
+        "file": "src\\modules\\financas\\types.ts",
+        "line": 4,
+        "exported": true
+      },
+      {
+        "name": "Json",
+        "kind": "type",
+        "file": "src\\components\\Comercialpublico2\\src\\lib\\database.types.ts",
+        "line": 1,
+        "exported": true
+      },
+      {
+        "name": "Json",
+        "kind": "type",
+        "file": "src\\components\\Comercialprivado2\\src\\lib\\database.types.ts",
+        "line": 1,
+        "exported": true
+      },
+      {
+        "name": "NaturezaRow",
+        "kind": "type",
+        "file": "src\\modules\\financas\\components\\Features\\contract_sheets\\sheetDetailUtils.ts",
+        "line": 1,
+        "exported": true
+      },
+      {
+        "name": "PermissionLevel",
+        "kind": "type",
+        "file": "src\\hooks\\useAuth.ts",
+        "line": 17,
+        "exported": true
+      },
+      {
+        "name": "PermissionLevel",
+        "kind": "type",
+        "file": "src\\components\\config\\PermissionsMatrix.tsx",
+        "line": 3,
+        "exported": true
+      },
+      {
+        "name": "ProposalNote",
+        "kind": "type",
+        "file": "src\\components\\Comercialpublico2\\src\\hooks\\useProposalNotes.ts",
+        "line": 4,
+        "exported": true
+      },
+      {
+        "name": "ProposalStatus",
+        "kind": "type",
+        "file": "src\\components\\Comercialpublico2\\src\\constants\\status.ts",
+        "line": 16,
+        "exported": true
+      },
+      {
+        "name": "QualidadeViewState",
+        "kind": "type",
+        "file": "src\\modules\\qualidade\\types.ts",
+        "line": 1,
+        "exported": true
+      },
+      {
+        "name": "SituacaoNotificacao",
+        "kind": "type",
+        "file": "src\\components\\Comercialpublico2\\src\\types\\notificacao.ts",
+        "line": 1,
+        "exported": true
+      },
+      {
+        "name": "SystemVersion",
+        "kind": "type",
+        "file": "src\\components\\Comercialpublico2\\src\\contexts\\SystemVersionContext.tsx",
+        "line": 3,
+        "exported": true
+      },
+      {
+        "name": "SystemVersion",
+        "kind": "type",
+        "file": "src\\components\\Comercialprivado2\\src\\contexts\\SystemVersionContext.tsx",
+        "line": 3,
+        "exported": true
+      },
+      {
+        "name": "TabType",
+        "kind": "type",
+        "file": "src\\components\\Comercialprivado2\\src\\components\\Orçamentos\\src\\types.ts",
+        "line": 88,
+        "exported": true
+      },
+      {
+        "name": "ViewState",
+        "kind": "type",
+        "file": "src\\modules\\ti\\types.ts",
+        "line": 1,
+        "exported": true
+      },
+      {
+        "name": "ViewState",
+        "kind": "type",
+        "file": "src\\modules\\financas\\types.ts",
+        "line": 5,
+        "exported": true
+      },
+      {
+        "name": "Action",
+        "kind": "type",
+        "file": "src\\components\\ui\\use-toast.ts",
+        "line": 34,
+        "exported": false
+      },
+      {
+        "name": "ActionType",
+        "kind": "type",
+        "file": "src\\components\\ui\\use-toast.ts",
+        "line": 32,
+        "exported": false
+      },
+      {
+        "name": "BSCTab",
+        "kind": "type",
+        "file": "src\\pages\\BSCPage.tsx",
+        "line": 15,
+        "exported": false
+      },
+      {
+        "name": "BudgetTables",
+        "kind": "type",
+        "file": "src\\components\\Comercialprivado2\\src\\components\\Budgets\\useBudgetsSupabase.ts",
+        "line": 4,
+        "exported": false
+      },
+      {
+        "name": "Challenge",
+        "kind": "type",
+        "file": "src\\components\\Comercialpublico2\\src\\services\\challengeService.ts",
+        "line": 4,
+        "exported": false
+      },
+      {
+        "name": "Challenge",
+        "kind": "type",
+        "file": "src\\components\\Comercialprivado2\\src\\services\\challengeService.ts",
+        "line": 4,
+        "exported": false
+      },
+      {
+        "name": "ChallengeInsert",
+        "kind": "type",
+        "file": "src\\components\\Comercialpublico2\\src\\services\\challengeService.ts",
+        "line": 5,
+        "exported": false
+      },
+      {
+        "name": "ChallengeInsert",
+        "kind": "type",
+        "file": "src\\components\\Comercialprivado2\\src\\services\\challengeService.ts",
+        "line": 5,
+        "exported": false
+      },
+      {
+        "name": "ChallengeUpdate",
+        "kind": "type",
+        "file": "src\\components\\Comercialpublico2\\src\\services\\challengeService.ts",
+        "line": 6,
+        "exported": false
+      },
+      {
+        "name": "ChallengeUpdate",
+        "kind": "type",
+        "file": "src\\components\\Comercialprivado2\\src\\services\\challengeService.ts",
+        "line": 6,
+        "exported": false
+      },
+      {
+        "name": "CommercialGoal",
+        "kind": "type",
+        "file": "src\\components\\Comercialprivado2\\src\\services\\commercialGoalsService.ts",
+        "line": 3,
+        "exported": false
+      },
+      {
+        "name": "CommercialGoal",
+        "kind": "type",
+        "file": "src\\components\\Comercialprivado2\\src\\components\\Dashboard\\CommercialGoalsCarousel.tsx",
+        "line": 7,
+        "exported": false
+      },
+      {
+        "name": "CommercialGoal",
+        "kind": "type",
+        "file": "src\\components\\Comercialprivado2\\src\\components\\Dashboard\\CommercialGoalCardSimple.tsx",
+        "line": 6,
+        "exported": false
+      },
+      {
+        "name": "CommercialGoal",
+        "kind": "type",
+        "file": "src\\components\\Comercialprivado2\\src\\components\\CommercialGoals\\CommercialGoals.tsx",
+        "line": 10,
+        "exported": false
+      },
+      {
+        "name": "CommercialGoal",
+        "kind": "type",
+        "file": "src\\components\\Comercialprivado2\\src\\components\\CommercialGoals\\AssignWinnersModal.tsx",
+        "line": 5,
+        "exported": false
+      },
+      {
+        "name": "CommercialGoal",
+        "kind": "type",
+        "file": "src\\components\\Comercialprivado2\\src\\components\\CommercialGoals\\AddCommercialGoalModal.tsx",
+        "line": 5,
+        "exported": false
+      },
+      {
+        "name": "CommercialGoalInsert",
+        "kind": "type",
+        "file": "src\\components\\Comercialprivado2\\src\\services\\commercialGoalsService.ts",
+        "line": 20,
+        "exported": false
+      }
+    ],
+    "enums": []
+  },
+  "publicAPI": [
+    {
+      "name": "AccessType",
+      "kind": "type",
+      "file": "src\\components\\Comercialpublico2\\src\\contexts\\AccessContext.tsx",
+      "line": 3,
+      "exported": true
+    },
+    {
+      "name": "Action",
+      "kind": "interface",
+      "file": "src\\components\\Comercialprivado2\\src\\services\\actionsService.ts",
+      "line": 3,
+      "exported": true
+    },
+    {
+      "name": "Action",
+      "kind": "interface",
+      "file": "src\\pages\\AtasAcoesPage.tsx",
+      "line": 12,
+      "exported": true
+    },
+    {
+      "name": "ActionComment",
+      "kind": "interface",
+      "file": "src\\components\\Comercialprivado2\\src\\services\\actionsService.ts",
+      "line": 20,
+      "exported": true
+    },
+    {
+      "name": "AddBookLoanModal",
+      "kind": "function",
+      "file": "src\\components\\cultura\\AddBookLoanModal.tsx",
+      "line": 15,
+      "exported": true
+    },
+    {
+      "name": "addDays",
+      "kind": "function",
+      "file": "src\\modules\\financas\\utils.ts",
+      "line": 245,
+      "exported": true
+    },
+    {
+      "name": "AdminSupabaseStatusFloating",
+      "kind": "function",
+      "file": "src\\components\\AdminSupabaseStatusFloating.tsx",
+      "line": 7,
+      "exported": true
+    },
+    {
+      "name": "AIChatService",
+      "kind": "class",
+      "file": "src\\services\\aiChatService.ts",
+      "line": 9,
+      "exported": true
+    },
+    {
+      "name": "applyDefaultOrder",
+      "kind": "function",
+      "file": "src\\components\\Comercialpublico2\\src\\utils\\sortPropostas.ts",
+      "line": 13,
+      "exported": true
+    },
+    {
+      "name": "AppUser",
+      "kind": "interface",
+      "file": "src\\hooks\\useAuth.ts",
+      "line": 8,
+      "exported": true
+    },
+    {
+      "name": "AtaAnaliseCritica",
+      "kind": "interface",
+      "file": "src\\modules\\qualidade\\types.ts",
+      "line": 161,
+      "exported": true
+    },
+    {
+      "name": "Badge",
+      "kind": "interface",
+      "file": "src\\components\\Comercialpublico2\\src\\types\\index.ts",
+      "line": 14,
+      "exported": true
+    },
+    {
+      "name": "Badge",
+      "kind": "interface",
+      "file": "src\\components\\Comercialprivado2\\src\\types\\index.ts",
+      "line": 14,
+      "exported": true
+    },
+    {
+      "name": "badgeByDeadline",
+      "kind": "function",
+      "file": "src\\components\\Comercialpublico2\\src\\utils\\datetime.ts",
+      "line": 39,
+      "exported": true
+    },
+    {
+      "name": "BalancesByCompany",
+      "kind": "type",
+      "file": "src\\modules\\financas\\types.ts",
+      "line": 3,
+      "exported": true
+    },
+    {
+      "name": "Benefit",
+      "kind": "interface",
+      "file": "src\\components\\Comercialprivado2\\src\\components\\Orçamentos\\src\\types.ts",
+      "line": 44,
+      "exported": true
+    },
+    {
+      "name": "BenefitOverride",
+      "kind": "interface",
+      "file": "src\\components\\Comercialprivado2\\src\\components\\Orçamentos\\src\\services\\budgetBenefitsService.ts",
+      "line": 3,
+      "exported": true
+    },
+    {
+      "name": "BonusContribution",
+      "kind": "interface",
+      "file": "src\\components\\Comercialpublico2\\src\\types\\index.ts",
+      "line": 173,
+      "exported": true
+    },
+    {
+      "name": "BonusContribution",
+      "kind": "interface",
+      "file": "src\\components\\Comercialprivado2\\src\\types\\index.ts",
+      "line": 136,
+      "exported": true
+    },
+    {
+      "name": "BonusEmployee",
+      "kind": "interface",
+      "file": "src\\components\\Comercialpublico2\\src\\types\\index.ts",
+      "line": 184,
+      "exported": true
+    },
+    {
+      "name": "BonusEmployee",
+      "kind": "interface",
+      "file": "src\\components\\Comercialprivado2\\src\\types\\index.ts",
+      "line": 147,
+      "exported": true
+    },
+    {
+      "name": "BonusFund",
+      "kind": "interface",
+      "file": "src\\components\\Comercialpublico2\\src\\types\\index.ts",
+      "line": 167,
+      "exported": true
+    },
+    {
+      "name": "BonusFund",
+      "kind": "interface",
+      "file": "src\\components\\Comercialprivado2\\src\\types\\index.ts",
+      "line": 130,
+      "exported": true
+    },
+    {
+      "name": "BscFoundation",
+      "kind": "interface",
+      "file": "src\\types\\database.ts",
+      "line": 290,
+      "exported": true
+    },
+    {
+      "name": "BscItem",
+      "kind": "interface",
+      "file": "src\\types\\database.ts",
+      "line": 276,
+      "exported": true
+    },
+    {
+      "name": "Budget",
+      "kind": "interface",
+      "file": "src\\components\\Comercialprivado2\\src\\components\\Orçamentos\\src\\types.ts",
+      "line": 70,
+      "exported": true
+    },
+    {
+      "name": "buscarDREPorContrato",
+      "kind": "function",
+      "file": "src\\services\\dreService.ts",
+      "line": 24,
+      "exported": true
+    },
+    {
+      "name": "ButtonProps",
+      "kind": "interface",
+      "file": "src\\components\\ui\\button.tsx",
+      "line": 36,
+      "exported": true
+    },
+    {
+      "name": "calculateContractDuration",
+      "kind": "function",
+      "file": "src\\components\\Comercialpublico2\\src\\utils\\contractDuration.ts",
+      "line": 6,
+      "exported": true
+    },
+    {
+      "name": "calculateDurationInMonths",
+      "kind": "function",
+      "file": "src\\lib\\contractUtils.ts",
+      "line": 205,
+      "exported": true
+    },
+    {
+      "name": "calculateMonthsBetween",
+      "kind": "function",
+      "file": "src\\components\\Comercialpublico2\\src\\utils\\contractDuration.ts",
+      "line": 1,
+      "exported": true
+    },
+    {
+      "name": "calculateMonthsRemaining",
+      "kind": "function",
+      "file": "src\\components\\Comercialpublico2\\src\\utils\\contractDuration.ts",
+      "line": 13,
+      "exported": true
+    },
+    {
+      "name": "Campaign",
+      "kind": "interface",
+      "file": "src\\components\\Comercialpublico2\\src\\types\\index.ts",
+      "line": 22,
+      "exported": true
+    },
+    {
+      "name": "Campaign",
+      "kind": "interface",
+      "file": "src\\components\\Comercialprivado2\\src\\types\\index.ts",
+      "line": 22,
+      "exported": true
+    },
+    {
+      "name": "CapexData",
+      "kind": "interface",
+      "file": "src\\components\\Comercialprivado2\\src\\components\\Orçamentos\\src\\components\\CapexModal.tsx",
+      "line": 14,
+      "exported": true
+    },
+    {
+      "name": "CashSubView",
+      "kind": "type",
+      "file": "src\\modules\\financas\\types.ts",
+      "line": 7,
+      "exported": true
+    },
+    {
+      "name": "CategoriaDRE",
+      "kind": "interface",
+      "file": "src\\modules\\financas\\types.ts",
+      "line": 115,
+      "exported": true
+    },
+    {
+      "name": "CategoryNode",
+      "kind": "interface",
+      "file": "src\\modules\\financas\\types.ts",
+      "line": 124,
+      "exported": true
+    },
+    {
+      "name": "CategoryRow",
+      "kind": "interface",
+      "file": "src\\modules\\financas\\components\\Features\\contract_sheets\\sheetDetailUtils.ts",
+      "line": 3,
+      "exported": true
+    },
+    {
+      "name": "Challenge",
+      "kind": "interface",
+      "file": "src\\components\\Comercialpublico2\\src\\types\\index.ts",
+      "line": 150,
+      "exported": true
+    },
+    {
+      "name": "Challenge",
+      "kind": "interface",
+      "file": "src\\components\\Comercialprivado2\\src\\types\\index.ts",
+      "line": 113,
+      "exported": true
+    },
+    {
+      "name": "Chamado",
+      "kind": "interface",
+      "file": "src\\modules\\ti\\types.ts",
+      "line": 13,
+      "exported": true
+    },
+    {
+      "name": "ChamadoEstimativa",
+      "kind": "type",
+      "file": "src\\modules\\ti\\chamadosConstants.ts",
+      "line": 34,
+      "exported": true
+    },
+    {
+      "name": "ChamadoHistoricoItem",
+      "kind": "interface",
+      "file": "src\\modules\\ti\\types.ts",
+      "line": 3,
+      "exported": true
+    },
+    {
+      "name": "ChamadoModulo",
+      "kind": "type",
+      "file": "src\\modules\\ti\\chamadosConstants.ts",
+      "line": 31,
+      "exported": true
+    },
+    {
+      "name": "ChamadoPrioridade",
+      "kind": "type",
+      "file": "src\\modules\\ti\\chamadosConstants.ts",
+      "line": 5,
+      "exported": true
+    },
+    {
+      "name": "ChamadoStatus",
+      "kind": "type",
+      "file": "src\\modules\\ti\\chamadosConstants.ts",
+      "line": 9,
+      "exported": true
+    },
+    {
+      "name": "ChamadoTipo",
+      "kind": "type",
+      "file": "src\\modules\\ti\\chamadosConstants.ts",
+      "line": 2,
+      "exported": true
+    },
+    {
+      "name": "ChartDataPoint",
+      "kind": "interface",
+      "file": "src\\types\\database.ts",
+      "line": 60,
+      "exported": true
+    },
+    {
+      "name": "ChatMessage",
+      "kind": "interface",
+      "file": "src\\services\\aiChatService.ts",
+      "line": 3,
+      "exported": true
+    }
+  ],
+  "dependencies": {
+    "mostImported": [
+      {
+        "file": "D:\\xampp\\htdocs\\wws-hub\\src\\components\\Comercialpublico2\\src\\hooks\\useSupabase.ts",
+        "importedBy": 36
+      },
+      {
+        "file": "D:\\xampp\\htdocs\\wws-hub\\src\\components\\Comercialprivado2\\src\\hooks\\useSupabase.ts",
+        "importedBy": 33
+      },
+      {
+        "file": "D:\\xampp\\htdocs\\wws-hub\\src\\components\\Comercialprivado2\\src\\utils\\formatCurrency.ts",
+        "importedBy": 30
+      },
+      {
+        "file": "D:\\xampp\\htdocs\\wws-hub\\src\\components\\Comercialpublico2\\src\\contexts\\DepartmentContext.tsx",
+        "importedBy": 28
+      },
+      {
+        "file": "D:\\xampp\\htdocs\\wws-hub\\src\\components\\Comercialprivado2\\src\\components\\Orçamentos\\src\\lib\\supabase.ts",
+        "importedBy": 27
+      },
+      {
+        "file": "D:\\xampp\\htdocs\\wws-hub\\src\\components\\Comercialpublico2\\src\\utils\\formatCurrency.ts",
+        "importedBy": 26
+      },
+      {
+        "file": "D:\\xampp\\htdocs\\wws-hub\\src\\modules\\financas\\utils.ts",
+        "importedBy": 26
+      },
+      {
+        "file": "D:\\xampp\\htdocs\\wws-hub\\src\\modules\\financas\\types.ts",
+        "importedBy": 25
+      },
+      {
+        "file": "D:\\xampp\\htdocs\\wws-hub\\src\\components\\ui\\button.tsx",
+        "importedBy": 21
+      },
+      {
+        "file": "D:\\xampp\\htdocs\\wws-hub\\src\\components\\Comercialpublico2\\src\\lib\\supabase.ts",
+        "importedBy": 20
+      },
+      {
+        "file": "D:\\xampp\\htdocs\\wws-hub\\src\\components\\Comercialprivado2\\src\\lib\\supabase.ts",
+        "importedBy": 19
+      },
+      {
+        "file": "D:\\xampp\\htdocs\\wws-hub\\src\\components\\Comercialprivado2\\src\\contexts\\YearContext.tsx",
+        "importedBy": 19
+      },
+      {
+        "file": "D:\\xampp\\htdocs\\wws-hub\\src\\components\\Comercialprivado2\\src\\utils\\dateUtils.ts",
+        "importedBy": 18
+      },
+      {
+        "file": "D:\\xampp\\htdocs\\wws-hub\\src\\lib\\supabase.ts",
+        "importedBy": 15
+      },
+      {
+        "file": "D:\\xampp\\htdocs\\wws-hub\\src\\components\\Comercialprivado2\\src\\components\\Orçamentos\\src\\types.ts",
+        "importedBy": 15
+      },
+      {
+        "file": "D:\\xampp\\htdocs\\wws-hub\\src\\components\\Comercialpublico2\\src\\contexts\\YearContext.tsx",
+        "importedBy": 14
+      },
+      {
+        "file": "D:\\xampp\\htdocs\\wws-hub\\src\\components\\Comercialpublico2\\src\\types/index.ts",
+        "importedBy": 13
+      },
+      {
+        "file": "D:\\xampp\\htdocs\\wws-hub\\src\\components\\Comercialpublico2\\src\\utils\\dateUtils.ts",
+        "importedBy": 13
+      },
+      {
+        "file": "D:\\xampp\\htdocs\\wws-hub\\src\\components\\Comercialpublico2\\src\\contexts\\SystemVersionContext.tsx",
+        "importedBy": 11
+      },
+      {
+        "file": "D:\\xampp\\htdocs\\wws-hub\\src\\components\\Comercialprivado2\\src\\types/index.ts",
+        "importedBy": 10
+      }
+    ]
+  },
+  "stats": {
+    "totalSymbols": 817,
+    "exportedSymbols": 324,
+    "analysisTimeMs": 10044
+  }
+}

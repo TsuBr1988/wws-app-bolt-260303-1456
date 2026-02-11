@@ -1,0 +1,505 @@
+/*
+ * Folha de estilos para impressão de propostas
+ * Formato A4 retrato com margens de 12mm
+ */
+
+@page {
+  size: A4;
+  margin: 12mm;
+}
+
+@media print {
+  /* Configuração global */
+  html, body {
+    height: auto !important;
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+    font-size: 11pt;
+    line-height: 1.25;
+  }
+
+  /* Esconder elementos da UI */
+  .no-print,
+  .print\\:hidden {
+    display: none !important;
+  }
+
+  /* Container raiz */
+  .print-root {
+    width: 210mm;
+    font-family: system-ui, -apple-system, sans-serif;
+  }
+
+  /* Páginas */
+  .print-page {
+    width: 100%;
+    min-height: calc(297mm - 24mm);
+    box-sizing: border-box;
+    page-break-after: always;
+    padding-top: 2mm;
+  }
+
+  /* Última página não precisa de quebra depois */
+  .print-page:last-child {
+    page-break-after: auto;
+  }
+
+  /* Logo da empresa - tamanho fixo */
+  .print-summary img[alt="Grupo WWS"],
+  img[alt="Grupo WWS"] {
+    height: 48px !important;
+    width: auto !important;
+    max-height: 48px !important;
+  }
+
+  /* Página de resumo - compacta e otimizada para caber em 1 A4 */
+  .print-summary {
+    font-size: 9pt;
+    line-height: 1.15;
+  }
+
+  /* Cards e KPIs compactos */
+  .print-summary .card,
+  .print-summary .kpi,
+  .print-summary [class*="bg-purple-"],
+  .print-summary [class*="bg-orange-"],
+  .print-summary [class*="bg-blue-"],
+  .print-summary [class*="bg-green-"] {
+    padding: 4px 6px !important;
+    margin: 2px 2px 4px 0 !important;
+    page-break-inside: avoid;
+    break-inside: avoid;
+  }
+
+  /* Tabelas compactas - Página 1 */
+  .print-summary table {
+    width: 100%;
+    border-collapse: collapse;
+    page-break-inside: avoid;
+    break-inside: avoid;
+    font-size: 9pt;
+    margin-bottom: 8px;
+  }
+
+  .print-summary th,
+  .print-summary td {
+    padding: 4px 6px !important;
+    border: 1px solid #cbd5e1;
+    line-height: 1.3;
+  }
+
+  .print-summary th {
+    font-weight: 600;
+    background-color: #f1f5f9 !important;
+  }
+
+  /* Tabelas das planilhas detalhadas - Páginas 2+ */
+  .detailed-position-section table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 6pt !important;
+    line-height: 1.1 !important;
+  }
+
+  .detailed-position-section th,
+  .detailed-position-section td {
+    padding: 1px 2px !important;
+    border: 1px solid #cbd5e1;
+    line-height: 1.1 !important;
+    font-size: 6pt !important;
+  }
+
+  .detailed-position-section th {
+    font-weight: 600;
+    background-color: #f1f5f9 !important;
+  }
+
+  /* Seções não devem quebrar internamente - mas permitir quebra se necessário */
+  [data-print="summary-header"] {
+    break-inside: avoid;
+    page-break-inside: avoid;
+    margin-bottom: 10px !important;
+    padding: 12px !important;
+  }
+
+  [data-print="summary-cards"],
+  [data-print="summary-relacao-postos"],
+  [data-print="summary-materiais"],
+  [data-print="summary-capex"],
+  [data-print="summary-equipamentos"],
+  [data-print="summary-totais"] {
+    break-inside: auto;
+    page-break-inside: auto;
+  }
+
+  /* Garantir que o total final fique junto */
+  [data-print="summary-totais"] {
+    break-inside: avoid !important;
+    page-break-inside: avoid !important;
+    margin-top: 6px !important;
+  }
+
+  /* Cada posto em página própria */
+  .print-posto,
+  [data-print="posto"] {
+    font-size: 11pt;
+    line-height: 1.25;
+    page-break-before: always;
+    break-before: page;
+  }
+
+  .print-posto:first-of-type {
+    page-break-before: always;
+  }
+
+  /* Títulos e cabeçalhos */
+  .print-title,
+  .section-title,
+  h1, h2, h3, h4 {
+    font-weight: 700;
+    margin: 5px 0 7px;
+    page-break-after: avoid;
+    break-after: avoid;
+  }
+
+  /* Preservar cores dos backgrounds */
+  .bg-white,
+  .bg-gradient-to-r,
+  .bg-gradient-to-br,
+  .bg-blue-50,
+  .bg-blue-100,
+  .bg-blue-600,
+  .bg-blue-700,
+  .bg-purple-50,
+  .bg-purple-100,
+  .bg-purple-200,
+  .bg-purple-600,
+  .bg-purple-700,
+  .bg-orange-50,
+  .bg-orange-100,
+  .bg-orange-200,
+  .bg-orange-600,
+  .bg-orange-700,
+  .bg-green-50,
+  .bg-green-100,
+  .bg-green-200,
+  .bg-green-600,
+  .bg-green-700,
+  .bg-teal-50,
+  .bg-teal-100,
+  .bg-teal-600,
+  .bg-slate-50,
+  .bg-slate-100,
+  .bg-slate-700,
+  .bg-slate-800,
+  .bg-amber-100,
+  .bg-amber-600,
+  .from-blue-50,
+  .from-blue-600,
+  .from-indigo-50,
+  .from-indigo-600,
+  .from-slate-700,
+  .from-slate-800,
+  .to-blue-700,
+  .to-indigo-50,
+  .to-indigo-600,
+  .to-slate-800 {
+    print-color-adjust: exact !important;
+    -webkit-print-color-adjust: exact !important;
+  }
+
+  /* Preservar cores dos textos */
+  .text-white,
+  .text-blue-600,
+  .text-blue-700,
+  .text-blue-800,
+  .text-blue-900,
+  .text-purple-700,
+  .text-purple-900,
+  .text-orange-700,
+  .text-orange-900,
+  .text-green-700,
+  .text-green-900,
+  .text-teal-700,
+  .text-slate-600,
+  .text-slate-700,
+  .text-slate-800,
+  .text-slate-900,
+  .text-amber-600,
+  .text-amber-800 {
+    print-color-adjust: exact !important;
+    -webkit-print-color-adjust: exact !important;
+  }
+
+  /* Bordas */
+  .border,
+  .border-2,
+  [class*="border-"] {
+    print-color-adjust: exact !important;
+    -webkit-print-color-adjust: exact !important;
+  }
+
+  /* Espaçamentos compactos para a primeira página */
+  .print-summary h3,
+  .print-summary h4 {
+    margin-top: 2px !important;
+    margin-bottom: 3px !important;
+  }
+
+  .print-summary .p-6,
+  .print-summary .p-4,
+  .print-summary .p-3 {
+    padding: 6px !important;
+  }
+
+  .print-summary .px-6,
+  .print-summary .px-4 {
+    padding-left: 6px !important;
+    padding-right: 6px !important;
+  }
+
+  .print-summary .py-4,
+  .print-summary .py-2 {
+    padding-top: 4px !important;
+    padding-bottom: 4px !important;
+  }
+
+  .print-summary .mb-6,
+  .print-summary .mb-4 {
+    margin-bottom: 6px !important;
+  }
+
+  .print-summary .space-y-6 > * + *,
+  .print-summary .space-y-3 > * + * {
+    margin-top: 8px !important;
+  }
+
+  /* Espaçamento entre os cards principais (relação postos, materiais, capex, etc) */
+  .print-summary.space-y-5 > * + *,
+  .print-summary.space-y-4 > * + * {
+    margin-top: 18px !important;
+  }
+
+  /* Adicionar espaço entre seções da página 1 */
+  .print-summary > div + div {
+    margin-top: 18px !important;
+  }
+
+  /* Espaçamento entre cards de conteúdo */
+  .print-summary .bg-white.border {
+    margin-bottom: 18px !important;
+  }
+
+  /* Grid de cards com espaçamento adequado */
+  .print-summary .grid {
+    gap: 12px !important;
+  }
+
+  /* Grid de 2 colunas para materiais/capex e equipamentos/benefícios */
+  .print-summary .grid.grid-cols-1.md\:grid-cols-2 {
+    display: grid !important;
+    grid-template-columns: 1fr 1fr !important;
+    gap: 12px !important;
+  }
+
+  /* Cards com mais padding */
+  .print-summary [class*="bg-purple-50"],
+  .print-summary [class*="bg-orange-50"],
+  .print-summary [class*="bg-blue-50"],
+  .print-summary [class*="bg-green-50"],
+  .print-summary [class*="bg-teal-50"] {
+    padding: 6px 8px !important;
+  }
+
+  /* Reduzir bordas */
+  .print-summary .border-2 {
+    border-width: 1px !important;
+  }
+
+  /* Texto compacto */
+  .print-summary .text-2xl {
+    font-size: 1.3rem !important;
+  }
+
+  .print-summary .text-xl {
+    font-size: 1.1rem !important;
+  }
+
+  .print-summary .text-lg {
+    font-size: 1rem !important;
+  }
+
+  .print-summary .text-base {
+    font-size: 0.9rem !important;
+  }
+
+  /* Logos menores */
+  .print-summary img {
+    max-height: 40px !important;
+    width: auto !important;
+  }
+
+  /* Imagens */
+  img {
+    max-width: 100%;
+    height: auto;
+    page-break-inside: avoid;
+  }
+
+  /* Badges e spans coloridos */
+  .rounded,
+  .rounded-lg,
+  .rounded-full,
+  span[class*="bg-"] {
+    print-color-adjust: exact !important;
+    -webkit-print-color-adjust: exact !important;
+  }
+
+  /* Ajuste de escala caso necessário */
+  .fit-summary-if-needed {
+    transform-origin: top left;
+  }
+
+  /* Remover sombras para economizar tinta */
+  .shadow,
+  .shadow-sm,
+  .shadow-md,
+  .shadow-lg,
+  .shadow-xl,
+  .shadow-2xl {
+    box-shadow: none !important;
+  }
+
+  /* Garantir que overflow não quebre o layout */
+  .overflow-x-auto,
+  .overflow-y-auto,
+  .overflow-auto {
+    overflow: visible !important;
+  }
+
+  /* Cards e containers */
+  .rounded-lg {
+    border-radius: 4px !important;
+  }
+
+  /* Evitar quebra de linha em elementos inline importantes */
+  .flex.items-center {
+    page-break-inside: avoid;
+    break-inside: avoid;
+  }
+
+  /* Remover hover states */
+  .hover\\:bg-slate-50:hover {
+    background-color: transparent !important;
+  }
+
+  /* Garantir visibilidade de texto em fundos coloridos */
+  .bg-blue-600,
+  .bg-blue-700,
+  .bg-purple-600,
+  .bg-orange-600,
+  .bg-green-600,
+  .bg-teal-600,
+  .bg-slate-700,
+  .bg-slate-800,
+  .from-blue-600,
+  .from-slate-700 {
+    color: white !important;
+  }
+
+  /* Tabela de resultados detalhados */
+  .results-table {
+    font-size: 9pt;
+  }
+
+  .results-table th,
+  .results-table td {
+    padding: 2px 4px !important;
+  }
+
+  /* Espaçamento entre seções */
+  .detailed-position-section > div + div {
+    margin-top: 8px !important;
+  }
+
+  /* Títulos de seção (barras coloridas) */
+  .print-summary [class*="bg-blue-600"],
+  .print-summary [class*="bg-green-600"],
+  .print-summary [class*="bg-purple-600"],
+  .print-summary [class*="bg-orange-600"],
+  .print-summary [class*="bg-teal-600"] {
+    padding: 8px 10px !important;
+  }
+
+  /* Padding adequado dentro das seções */
+  .print-summary .border > div:last-child {
+    padding: 10px !important;
+  }
+
+  /* Garantir bordas visíveis nos cards */
+  .print-summary .border {
+    border: 1px solid #cbd5e1 !important;
+    border-radius: 4px !important;
+  }
+
+  /* Padding interno dos cards de informação */
+  .print-summary [data-print="summary-header"] {
+    padding: 10px !important;
+  }
+
+  /* Forçar quebra de página antes dos postos */
+  .detailed-position-section {
+    page-break-before: always !important;
+    break-before: page !important;
+    page-break-inside: auto !important;
+  }
+
+  /* Reduzir cabeçalho do posto */
+  .detailed-position-section .bg-gradient-to-r {
+    padding: 4px 6px !important;
+  }
+
+  .detailed-position-section h2 {
+    font-size: 0.9rem !important;
+    margin: 0 !important;
+  }
+
+  .detailed-position-section h3 {
+    font-size: 0.8rem !important;
+    margin-bottom: 3px !important;
+  }
+
+  .detailed-position-section .p-3 {
+    padding: 4px !important;
+  }
+
+  .detailed-position-section .mb-3 {
+    margin-bottom: 3px !important;
+  }
+
+  .detailed-position-section .grid {
+    gap: 2px !important;
+  }
+
+  .detailed-position-section .rounded {
+    padding: 2px 4px !important;
+  }
+
+  .detailed-position-section .text-xs {
+    font-size: 6pt !important;
+  }
+
+  .detailed-position-section .text-sm {
+    font-size: 7pt !important;
+  }
+
+  .detailed-position-section .text-base {
+    font-size: 7pt !important;
+  }
+
+  /* Forçar tabela detalhada a não quebrar */
+  .detailed-results-table {
+    page-break-inside: avoid !important;
+    break-inside: avoid !important;
+  }
+}
