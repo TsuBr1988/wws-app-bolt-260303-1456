@@ -107,7 +107,6 @@ const ProcedimentosTab: React.FC = () => {
   const [showDepartmentForm, setShowDepartmentForm] = useState(false);
   const [editingDepartmentId, setEditingDepartmentId] = useState<string | null>(null);
   const [departmentName, setDepartmentName] = useState('');
-  const [departmentDescription, setDepartmentDescription] = useState('');
 
   const [showProcedureForm, setShowProcedureForm] = useState(false);
   const [procedureFormMode, setProcedureFormMode] = useState<'create' | 'view' | 'edit'>('create');
@@ -203,7 +202,6 @@ const ProcedimentosTab: React.FC = () => {
 
   const resetDepartmentForm = () => {
     setDepartmentName('');
-    setDepartmentDescription('');
     setEditingDepartmentId(null);
     setShowDepartmentForm(false);
   };
@@ -211,21 +209,19 @@ const ProcedimentosTab: React.FC = () => {
   const openCreateDepartmentForm = () => {
     setEditingDepartmentId(null);
     setDepartmentName('');
-    setDepartmentDescription('');
     setShowDepartmentForm(true);
   };
 
   const openEditDepartmentForm = (department: ProcedimentoDepartamento) => {
     setEditingDepartmentId(department.id);
     setDepartmentName(department.name);
-    setDepartmentDescription(department.description || '');
     setShowDepartmentForm(true);
   };
 
   const handleSaveDepartment = async () => {
     if (!canEditDepartment) return;
-    if (!departmentName.trim() || !departmentDescription.trim()) {
-      toast({ title: 'Erro', description: 'Preencha todos os campos obrigatórios', variant: 'destructive' });
+    if (!departmentName.trim()) {
+      toast({ title: 'Erro', description: 'Preencha o nome do departamento', variant: 'destructive' });
       return;
     }
 
@@ -233,7 +229,6 @@ const ProcedimentosTab: React.FC = () => {
     if (editingDepartmentId) {
       const result = await qualidadeService.updateDepartamento(editingDepartmentId, {
         name: departmentName.trim(),
-        description: departmentDescription.trim(),
       });
 
       if (result.success) {
@@ -247,7 +242,6 @@ const ProcedimentosTab: React.FC = () => {
       if (!canCreateDepartment) return;
       const result = await qualidadeService.createDepartamento({
         name: departmentName.trim(),
-        description: departmentDescription.trim(),
       });
 
       if (result.success) {
@@ -483,18 +477,12 @@ const ProcedimentosTab: React.FC = () => {
 
           {showDepartmentForm && (
             <div className="bg-white p-6 rounded-xl border-2 border-gray-200 shadow-sm mb-6">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="mb-4">
                 <input
                   value={departmentName}
                   onChange={(e) => setDepartmentName(e.target.value)}
                   placeholder="Nome do departamento"
-                  className="px-4 py-3 border border-gray-300 rounded-lg"
-                />
-                <input
-                  value={departmentDescription}
-                  onChange={(e) => setDepartmentDescription(e.target.value)}
-                  placeholder="Descrição"
-                  className="px-4 py-3 border border-gray-300 rounded-lg"
+                  className="w-full px-4 py-3 border border-gray-300 rounded-lg"
                 />
               </div>
               <div className="flex justify-end gap-3 mt-4">
