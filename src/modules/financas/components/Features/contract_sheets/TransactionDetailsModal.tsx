@@ -1,7 +1,7 @@
 import React from 'react';
 import { X } from 'lucide-react';
 import { format } from 'date-fns';
-import ptBR from 'date-fns/locale/pt-BR';
+import { ptBR } from 'date-fns/locale/pt-BR';
 import { Transaction } from '../../../types';
 import { formatCurrency } from '../../../utils';
 
@@ -130,13 +130,7 @@ export const TransactionDetailsModal: React.FC<TransactionDetailsModalProps> = (
                             </span>
                           </td>
                           <td className="py-3 px-4 text-sm text-right font-medium text-slate-900">
-                            {formatCurrency(
-                              typeof tx.amount === 'string'
-                                ? parseFloat(
-                                    tx.amount.replace(/\./g, '').replace(',', '.')
-                                  )
-                                : tx.amount
-                            )}
+                            {formatCurrency(Number(tx.amount) || 0)}
                           </td>
                         </tr>
                       );

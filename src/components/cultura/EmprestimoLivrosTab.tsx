@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Plus, Search, BookOpen, Clock, Trophy, Calendar, ArrowUpDown } from 'lucide-react';
-import { supabase } from '../../lib/supabase';
+import { getDatabase } from '../../lib/databaseResolver';
 import { Button } from '../ui/button';
 import { Input } from '../ui/input';
 import BookLoanCard from './BookLoanCard';
@@ -9,6 +9,8 @@ import RankingModal from './RankingModal';
 import MonthlyRankingModal from './MonthlyRankingModal';
 import ActiveLoansModal from './ActiveLoansModal';
 import { startOfMonth, endOfMonth } from 'date-fns';
+
+const supabase = getDatabase('CULTURA');
 
 type SortType = 'avg_per_day' | 'book_name' | 'person_name';
 

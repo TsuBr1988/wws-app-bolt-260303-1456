@@ -1,8 +1,10 @@
 import React, { useMemo, useState } from 'react';
 import { X } from 'lucide-react';
-import { supabase } from '@/lib/supabase';
+import { getDatabase } from '@/lib/databaseResolver';
 import { useToast } from '@/components/ui/use-toast';
 import type { Chamado, ChamadoHistoricoItem } from '../types';
+
+const supabase = getDatabase('OPERACIONAL');
 
 interface VerChamadoModalProps {
   chamado: Chamado;
@@ -30,22 +32,49 @@ function getCurrentUserMeta() {
   }
 }
 
+function isCurrentUserAdmin() {
+  try {
+    const storedUser = localStorage.getItem('app_user');
+    const user = storedUser ? JSON.parse(storedUser) : null;
+    return user?.is_admin === true;
+  } catch {
+    return false;
+  }
+}
+
 const VerChamadoModal: React.FC<VerChamadoModalProps> = ({ chamado, onClose, onUpdated, onArchived, initialReopenMode }) => {
   const { toast } = useToast();
   const [loading, setLoading] = useState(false);
   const [comment, setComment] = useState('');
   const [reopenMode, setReopenMode] = useState(!!initialReopenMode);
+  const canRefazer = isCurrentUserAdmin();
 
   const isArchived = !!chamado.arquivado;
 
   const historico = useMemo(() => safeHistorico(chamado.historico), [chamado.historico]);
+
+  const comentarios = useMemo(
+    () => historico.filter((item) => !!item.comment?.trim()),
+    [historico]
+  );
+
+  const historicoEventos = useMemo(
+    () => historico.filter((item) => !item.comment?.trim() && item.action !== 'comentario'),
+    [historico]
+  );
 
   const formatDateTime = (value?: string | null) => {
     if (!value) return '-';
     try {
       const date = new Date(value);
       if (Number.isNaN(date.getTime())) return '-';
-      return date.toLocaleString('pt-BR');
+      return new Intl.DateTimeFormat('pt-BR', {
+        day: '2-digit',
+        month: '2-digit',
+        year: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit',
+      }).format(date);
     } catch {
       return '-';
     }
@@ -90,7 +119,11 @@ const VerChamadoModal: React.FC<VerChamadoModalProps> = ({ chamado, onClose, onU
         data_inicio: chamado.data_inicio || now,
         historico: pushHistorico(item),
       });
-      toast({ title: 'Status atualizado', description: 'Chamado movido para "Fazendo".' });
+      toast({
+        title: 'Status atualizado',
+        description: 'Chamado movido para "Fazendo".',
+        variant: 'success',
+      });
       onClose();
     } catch (error) {
       console.error(error);
@@ -109,7 +142,7 @@ const VerChamadoModal: React.FC<VerChamadoModalProps> = ({ chamado, onClose, onU
       toast({
         title: 'Comentário obrigatório',
         description: 'Informe um comentário antes de marcar como feito.',
-        variant: 'destructive',
+        variant: 'warning',
       });
       return;
     }
@@ -130,7 +163,7 @@ const VerChamadoModal: React.FC<VerChamadoModalProps> = ({ chamado, onClose, onU
           ...userMeta,
         }),
       });
-      toast({ title: 'Concluído', description: 'Chamado marcado como "Feito".' });
+      toast({ title: 'Concluído', description: 'Chamado marcado como "Feito".', variant: 'success' });
       onClose();
     } catch (error) {
       console.error(error);
@@ -145,6 +178,15 @@ const VerChamadoModal: React.FC<VerChamadoModalProps> = ({ chamado, onClose, onU
   };
 
   const handleRefazer = async () => {
+    if (!canRefazer) {
+      toast({
+        title: 'Sem permissão',
+        description: 'Apenas usuários admin podem refazer chamados.',
+        variant: 'warning',
+      });
+      return;
+    }
+
     try {
       setLoading(true);
       const now = new Date().toISOString();
@@ -165,7 +207,11 @@ const VerChamadoModal: React.FC<VerChamadoModalProps> = ({ chamado, onClose, onU
         historico: pushHistorico(item),
       });
 
-      toast({ title: 'Status atualizado', description: 'Chamado movido para "A fazer".' });
+      toast({
+        title: 'Status atualizado',
+        description: 'Chamado movido para "A fazer".',
+        variant: 'success',
+      });
       onClose();
     } catch (error) {
       console.error(error);
@@ -205,7 +251,7 @@ const VerChamadoModal: React.FC<VerChamadoModalProps> = ({ chamado, onClose, onU
 
       if (error) throw error;
 
-      toast({ title: 'Arquivado', description: 'Chamado arquivado com sucesso.' });
+      toast({ title: 'Arquivado', description: 'Chamado arquivado com sucesso.', variant: 'success' });
       onArchived(chamado.id);
       onClose();
     } catch (error) {
@@ -245,7 +291,11 @@ const VerChamadoModal: React.FC<VerChamadoModalProps> = ({ chamado, onClose, onU
         }),
       });
       setComment('');
-      toast({ title: 'Comentário salvo', description: 'Comentário adicionado ao histórico.' });
+      toast({
+        title: 'Comentário salvo',
+        description: 'Comentário adicionado ao histórico.',
+        variant: 'success',
+      });
     } catch (error) {
       console.error(error);
       toast({
@@ -263,7 +313,7 @@ const VerChamadoModal: React.FC<VerChamadoModalProps> = ({ chamado, onClose, onU
       toast({
         title: 'Comentário obrigatório',
         description: 'Informe um comentário para reabrir o chamado.',
-        variant: 'destructive',
+        variant: 'warning',
       });
       return;
     }
@@ -289,7 +339,11 @@ const VerChamadoModal: React.FC<VerChamadoModalProps> = ({ chamado, onClose, onU
         }),
       });
 
-      toast({ title: 'Reaberto', description: 'Chamado reaberto e movido para "A fazer".' });
+      toast({
+        title: 'Reaberto',
+        description: 'Chamado reaberto e movido para "A fazer".',
+        variant: 'success',
+      });
       onClose();
     } catch (error) {
       console.error(error);
@@ -391,35 +445,59 @@ const VerChamadoModal: React.FC<VerChamadoModalProps> = ({ chamado, onClose, onU
             />
           </div>
 
-          {historico.length > 0 && (
-            <div>
-              <p className="text-xs text-gray-500 mb-2">Histórico</p>
-              <div className="space-y-2">
-                {historico
+          <div>
+            <p className="text-xs text-gray-500 mb-2">Comentários</p>
+            <div className="space-y-2">
+              {comentarios.length === 0 ? (
+                <div className="text-sm text-gray-600">Sem comentários ainda.</div>
+              ) : (
+                comentarios
                   .slice()
                   .reverse()
                   .map((h, idx) => (
-                    <div key={idx} className="border border-gray-200 rounded-lg p-3 bg-white">
-                      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-1">
-                        <p className="text-sm font-medium text-gray-900">{h.action}</p>
-                        <p className="text-xs text-gray-500">{formatDateTime(h.at)}</p>
+                    <div key={`c-${idx}`} className="border border-gray-200 rounded-lg p-3 bg-white">
+                      <div className="text-xs text-gray-600">
+                        <small>
+                          Por <b>{h.by_name ?? h.by_email ?? '-'}</b> às {formatDateTime(h.at)}
+                          {h.from_status && h.to_status && h.from_status !== h.to_status ? (
+                            <> <b>{h.from_status} → {h.to_status}</b></>
+                          ) : null}
+                        </small>
                       </div>
-                      {(h.action === 'comentario' || !!h.comment) && (h.by_name || h.by_email) && (
-                        <p className="text-xs text-gray-600 mt-1">Por: {h.by_name || h.by_email}</p>
-                      )}
-                      {(h.from_status || h.to_status) && (
-                        <p className="text-xs text-gray-600 mt-1">
-                          {h.from_status || '-'} → {h.to_status || '-'}
-                        </p>
-                      )}
+                      <p className="mt-1 text-sm text-gray-800 whitespace-pre-wrap break-words">{h.comment}</p>
+                    </div>
+                  ))
+              )}
+            </div>
+          </div>
+
+          <div>
+            <p className="text-xs text-gray-500 mb-2">Histórico</p>
+            <div className="space-y-2">
+              {historicoEventos.length === 0 ? (
+                <div className="text-sm text-gray-600">Sem histórico ainda.</div>
+              ) : (
+                historicoEventos
+                  .slice()
+                  .reverse()
+                  .map((h, idx) => (
+                    <div key={`h-${idx}`} className="border border-gray-200 rounded-lg p-3 bg-white">
+                      <div className="text-xs text-gray-600">
+                        <small>
+                          Por <b>{h.by_name ?? h.by_email ?? '-'}</b> às {formatDateTime(h.at)}{' '}
+                          <b>
+                            {(h.from_status || '-') + ' → ' + (h.to_status || '-')}
+                          </b>
+                        </small>
+                      </div>
                       {h.comment && (
-                        <p className="text-sm text-gray-800 whitespace-pre-wrap break-words mt-2">{h.comment}</p>
+                        <p className="mt-1 text-sm text-gray-800 whitespace-pre-wrap break-words">{h.comment}</p>
                       )}
                     </div>
-                  ))}
-              </div>
+                  ))
+              )}
             </div>
-          )}
+          </div>
 
           <div className="flex flex-col sm:flex-row gap-3 justify-end">
             <button
@@ -462,13 +540,15 @@ const VerChamadoModal: React.FC<VerChamadoModalProps> = ({ chamado, onClose, onU
 
             {!isArchived && chamado.status === 'Feito' && (
               <>
-                <button
-                  onClick={handleRefazer}
-                  disabled={loading}
-                  className="w-full sm:w-auto bg-gray-100 text-gray-900 px-4 py-2 rounded-lg hover:bg-gray-200 transition-colors"
-                >
-                  Refazer
-                </button>
+                {canRefazer && (
+                  <button
+                    onClick={handleRefazer}
+                    disabled={loading}
+                    className="w-full sm:w-auto bg-gray-100 text-gray-900 px-4 py-2 rounded-lg hover:bg-gray-200 transition-colors"
+                  >
+                    Refazer
+                  </button>
+                )}
                 <button
                   onClick={handleConcluir}
                   disabled={loading}

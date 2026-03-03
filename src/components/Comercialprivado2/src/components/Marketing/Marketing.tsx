@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useMemo, useState, useEffect } from 'react';
 import { MarketingSummaryCards } from './MarketingSummaryCards';
 import { ConsolidatedChart } from './ConsolidatedChart';
 import { InstagramCard } from './InstagramCard';
@@ -8,17 +8,64 @@ import { ActionsTab } from '../Actions/ActionsTab';
 import { AtasTab } from '../Atas/AtasTab';
 import { marketingService, InstagramMetrics, LinkedInMetrics } from '../../services/marketingService';
 import { supabase } from '../../lib/supabase';
-import { BarChart3, Calendar, ListTodo, FileText } from 'lucide-react';
+import SolicitacoesTab from '../../modules/marketing/solicitacoes/components/SolicitacoesTab';
+import { useAuth } from '@/hooks/useAuth';
 
-type TabType = 'metrics' | 'planning' | 'actions' | 'atas';
+export type MarketingTabType = 'requests' | 'metrics' | 'planning' | 'actions' | 'atas';
 
-export const Marketing: React.FC = () => {
-  const [activeTab, setActiveTab] = useState<TabType>('metrics');
+interface MarketingProps {
+  initialTab?: MarketingTabType;
+}
+
+export const Marketing: React.FC<MarketingProps> = ({ initialTab }) => {
+  const { user, hasIndicatorAccess } = useAuth();
+  const [activeTab, setActiveTab] = useState<MarketingTabType>(initialTab ?? 'metrics');
   const [instagramData, setInstagramData] = useState<InstagramMetrics[]>([]);
   const [linkedinData, setLinkedinData] = useState<LinkedInMetrics[]>([]);
   const [responsaveis, setResponsaveis] = useState<string[]>([]);
   const [loading, setLoading] = useState(true);
   const [openActionForm, setOpenActionForm] = useState(false);
+
+  const canAccessTab = (tab: MarketingTabType) => {
+    if (user?.is_admin) return true;
+
+    const tabToIndicator: Record<MarketingTabType, string> = {
+      requests: 'Marketing > Solicitações',
+      metrics: 'Marketing > Comparativo de Plataformas',
+      planning: 'Marketing > Planejamento',
+      actions: 'Marketing > Tarefas',
+      atas: 'Marketing > Atas',
+    };
+
+    return hasIndicatorAccess('marketing', tabToIndicator[tab]);
+  };
+
+  const allowedTabs = useMemo(() => {
+    const order: MarketingTabType[] = ['requests', 'metrics', 'planning', 'actions', 'atas'];
+    return order.filter(canAccessTab);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user?.is_admin, hasIndicatorAccess]);
+
+  useEffect(() => {
+    if (!initialTab) return;
+    if (canAccessTab(initialTab)) {
+      setActiveTab(initialTab);
+      return;
+    }
+
+    if (allowedTabs.length > 0) {
+      setActiveTab(allowedTabs[0]);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [initialTab]);
+
+  useEffect(() => {
+    if (allowedTabs.length === 0) return;
+    if (!canAccessTab(activeTab)) {
+      setActiveTab(allowedTabs[0]);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [activeTab, allowedTabs]);
 
   const fetchData = async () => {
     try {
@@ -77,6 +124,16 @@ export const Marketing: React.FC = () => {
     );
   }
 
+  if (!user?.is_admin && allowedTabs.length === 0) {
+    return (
+      <div className="p-8 max-w-[1600px] mx-auto">
+        <div className="bg-yellow-50 border border-yellow-200 text-yellow-900 rounded-lg p-4">
+          Você não tem permissão para acessar nenhum item do Marketing.
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="p-8 max-w-[1600px] mx-auto">
       <div className="mb-8">
@@ -84,64 +141,13 @@ export const Marketing: React.FC = () => {
         <p className="text-gray-600">Acompanhe as métricas, planeje postagens e gerencie tarefas</p>
       </div>
 
-      <MarketingSummaryCards
-        instagramData={instagramData}
-        linkedinData={linkedinData}
-      />
-
-      <div className="mb-6">
-        <div className="border-b border-gray-200">
-          <nav className="flex gap-6">
-            <button
-              onClick={() => setActiveTab('metrics')}
-              className={`flex items-center gap-2 px-4 py-3 border-b-2 transition-colors ${
-                activeTab === 'metrics'
-                  ? 'border-blue-600 text-blue-600 font-semibold'
-                  : 'border-transparent text-gray-600 hover:text-gray-900 hover:border-gray-300'
-              }`}
-            >
-              <BarChart3 className="w-5 h-5" />
-              Comparativo de Plataformas
-            </button>
-            <button
-              onClick={() => setActiveTab('planning')}
-              className={`flex items-center gap-2 px-4 py-3 border-b-2 transition-colors ${
-                activeTab === 'planning'
-                  ? 'border-blue-600 text-blue-600 font-semibold'
-                  : 'border-transparent text-gray-600 hover:text-gray-900 hover:border-gray-300'
-              }`}
-            >
-              <Calendar className="w-5 h-5" />
-              Planejamento
-            </button>
-            <button
-              onClick={() => setActiveTab('actions')}
-              className={`flex items-center gap-2 px-4 py-3 border-b-2 transition-colors ${
-                activeTab === 'actions'
-                  ? 'border-blue-600 text-blue-600 font-semibold'
-                  : 'border-transparent text-gray-600 hover:text-gray-900 hover:border-gray-300'
-              }`}
-            >
-              <ListTodo className="w-5 h-5" />
-              Tarefas
-            </button>
-            <button
-              onClick={() => setActiveTab('atas')}
-              className={`flex items-center gap-2 px-4 py-3 border-b-2 transition-colors ${
-                activeTab === 'atas'
-                  ? 'border-blue-600 text-blue-600 font-semibold'
-                  : 'border-transparent text-gray-600 hover:text-gray-900 hover:border-gray-300'
-              }`}
-            >
-              <FileText className="w-5 h-5" />
-              Atas
-            </button>
-          </nav>
-        </div>
-      </div>
-
       {activeTab === 'metrics' && (
         <>
+          <MarketingSummaryCards
+            instagramData={instagramData}
+            linkedinData={linkedinData}
+          />
+
           <ConsolidatedChart
             instagramData={instagramData}
             linkedinData={linkedinData}
@@ -162,6 +168,8 @@ export const Marketing: React.FC = () => {
       )}
 
       {activeTab === 'planning' && <MarketingCalendar />}
+
+      {activeTab === 'requests' && <SolicitacoesTab />}
 
       {activeTab === 'actions' && (
         <ActionsTab

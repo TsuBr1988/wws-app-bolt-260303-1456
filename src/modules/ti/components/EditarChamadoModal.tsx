@@ -1,8 +1,10 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { X } from 'lucide-react';
-import { supabase } from '@/lib/supabase';
+import { getDatabase } from '@/lib/databaseResolver';
 import { useToast } from '@/components/ui/use-toast';
 import type { Chamado, ChamadoHistoricoItem } from '../types';
+
+const supabase = getDatabase('OPERACIONAL');
 
 interface EditarChamadoModalProps {
   chamado: Chamado;

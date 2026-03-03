@@ -11,6 +11,7 @@ interface ActionCardProps {
   onEdit: (action: Action) => void;
   onDelete: (id: string) => void;
   onViewComments: (action: Action) => void;
+  canEdit?: boolean;
 }
 
 const statusConfig = {
@@ -40,7 +41,8 @@ export const ActionCard: React.FC<ActionCardProps> = ({
   onStatusChange,
   onEdit,
   onDelete,
-  onViewComments
+  onViewComments,
+  canEdit = true,
 }) => {
   const config = statusConfig[action.status];
   const prazoDate = parseISO(action.data_prazo);
@@ -84,8 +86,14 @@ export const ActionCard: React.FC<ActionCardProps> = ({
         </div>
         <select
           value={action.status}
-          onChange={(e) => onStatusChange(action.id, e.target.value as any)}
-          className="px-2 py-1 text-sm bg-white bg-opacity-20 text-white border border-white border-opacity-30 rounded hover:bg-opacity-30 transition-all cursor-pointer"
+          disabled={!canEdit}
+          onChange={(e) => {
+            if (!canEdit) return;
+            onStatusChange(action.id, e.target.value as any);
+          }}
+          className={`px-2 py-1 text-sm bg-white bg-opacity-20 text-white border border-white border-opacity-30 rounded transition-all ${
+            canEdit ? 'hover:bg-opacity-30 cursor-pointer' : 'opacity-60 cursor-not-allowed'
+          }`}
         >
           <option value="a_fazer">A Fazer</option>
           <option value="fazendo">Fazendo</option>
@@ -134,21 +142,25 @@ export const ActionCard: React.FC<ActionCardProps> = ({
 
           <div className="flex-1"></div>
 
-          <button
-            onClick={() => onEdit(action)}
-            className="p-1.5 text-gray-600 hover:bg-gray-100 rounded-lg transition-colors"
-            title="Editar"
-          >
-            <Pencil className="w-4 h-4" />
-          </button>
+          {canEdit && (
+            <>
+              <button
+                onClick={() => onEdit(action)}
+                className="p-1.5 text-gray-600 hover:bg-gray-100 rounded-lg transition-colors"
+                title="Editar"
+              >
+                <Pencil className="w-4 h-4" />
+              </button>
 
-          <button
-            onClick={() => onDelete(action.id)}
-            className="p-1.5 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
-            title="Excluir"
-          >
-            <Trash2 className="w-4 h-4" />
-          </button>
+              <button
+                onClick={() => onDelete(action.id)}
+                className="p-1.5 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                title="Excluir"
+              >
+                <Trash2 className="w-4 h-4" />
+              </button>
+            </>
+          )}
         </div>
       </div>
     </div>

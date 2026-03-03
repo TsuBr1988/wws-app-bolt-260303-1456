@@ -1,9 +1,11 @@
 import { useState, useEffect } from 'react';
 import { Target, TrendingUp, Users, Settings, Shield, Award, Monitor, Plus } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { supabase } from '@/lib/supabase';
+import { getDatabase } from '@/lib/databaseResolver';
 import { InsertKpiDataModal } from '@/components/okr/InsertKpiDataModal';
 import { KpiHistoryModal } from '@/components/okr/KpiHistoryModal';
+
+const supabase = getDatabase('RH');
 
 interface KPI {
   name: string;

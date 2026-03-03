@@ -5,9 +5,11 @@ import PlanoEstrategicoView from './PlanoEstrategicoView';
 import OKRView from './OKRView';
 import MetasDepartamentosView from './MetasDepartamentosView';
 import FlywheelView from './FlywheelView';
-import { supabase } from '@/lib/supabase';
+import { getDatabase } from '@/lib/databaseResolver';
 import { useToast } from '@/components/ui/use-toast';
 import { useAuth } from '@/hooks/useAuth';
+
+const supabase = getDatabase('CULTURA');
 
 type ViewMode = 'menu' | 'bsc' | 'flywheel' | 'plano-estrategico' | 'okr' | 'metas-departamentos';
 

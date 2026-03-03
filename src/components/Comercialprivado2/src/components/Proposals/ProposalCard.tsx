@@ -55,12 +55,12 @@ function ObservationsButton({ proposalId, proposalClient, readOnly }: { proposal
         type="button"
         onClick={() => isValidProposal && setOpen(true)}
         disabled={!isValidProposal}
-        className="relative inline-flex h-8 w-8 items-center justify-center rounded-full border border-gray-300 bg-white hover:bg-gray-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+        className="relative inline-flex h-7 w-7 items-center justify-center rounded-full border border-gray-300 bg-white hover:bg-gray-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
         title={isValidProposal ? "Ver observações desta proposta" : "ID da proposta inválido"}
       >
         <MessageSquare className="w-3 h-3" />
         {count > 0 && (
-          <span className="absolute -top-1 -right-1 w-4 h-4 bg-red-500 text-white text-[10px] rounded-full flex items-center justify-center font-bold min-w-[16px]">
+          <span className="absolute -top-0.5 -right-0.5 w-3.5 h-3.5 bg-red-500 text-white text-[9px] rounded-full flex items-center justify-center font-bold min-w-[14px]">
             {count > 9 ? '9+' : count}
           </span>
         )}
@@ -314,196 +314,113 @@ export const ProposalCard: React.FC<ProposalCardProps> = ({
   return (
     <>
       <div className="bg-white rounded-lg shadow-sm border border-gray-200 hover:shadow-md transition-shadow">
-        {/* Layout otimizado com melhor distribuição */}
-        <div className="p-6">
-          <div className="grid grid-cols-12 gap-6 items-start">
-            {/* Cliente + Valor Mensal */}
-            <div className="col-span-3">
-              <div className="text-xs font-semibold text-gray-500 uppercase mb-2">Cliente</div>
+        {/* Layout em 3 linhas */}
+        <div className="p-3">
+          {/* LINHA 1: Cliente, Valor Mensal, Margem, Probabilidade, Status */}
+          <div className="grid grid-cols-12 gap-3 items-center mb-2">
+            {/* Cliente */}
+            <div className="col-span-4">
               <button
                 onClick={() => setShowDetailsModal(true)}
-                className="text-left w-full mb-3"
+                className="text-left w-full"
               >
-                <h3 className="text-sm font-semibold text-blue-600 hover:text-blue-800 hover:underline break-words leading-snug">
+                <div className="text-[10px] font-semibold text-gray-500 uppercase mb-0.5">Cliente</div>
+                <h3 className="text-xs font-semibold text-blue-600 hover:text-blue-800 hover:underline break-words leading-tight line-clamp-2">
                   {proposal.client}
                 </h3>
               </button>
-
-              {/* Valor Mensal e Margem lado a lado */}
-              <div className="mt-2 pt-2 border-t border-gray-100">
-                <div className="grid grid-cols-3 gap-3">
-                  {/* Valor Mensal */}
-                  <div>
-                    <div className="text-xs font-semibold text-gray-500 uppercase mb-1.5">Valor Mensal</div>
-                    {editingValue && !readOnly ? (
-                      <div className="flex items-center gap-1">
-                        <input
-                          type="number"
-                          value={tempValue}
-                          onChange={(e) => setTempValue(e.target.value)}
-                          className="w-full px-2 py-1 text-xs border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500"
-                          autoFocus
-                          onKeyDown={(e) => {
-                            if (e.key === 'Enter') handleValueSave();
-                            if (e.key === 'Escape') handleValueCancel();
-                          }}
-                        />
-                        <button onClick={handleValueSave} className="p-0.5 text-green-600 hover:text-green-800">
-                          <Save className="w-3 h-3" />
-                        </button>
-                        <button onClick={handleValueCancel} className="p-0.5 text-red-600 hover:text-red-800">
-                          <X className="w-3 h-3" />
-                        </button>
-                      </div>
-                    ) : (
-                      <button
-                        onClick={handleValueEdit}
-                        className={`group flex items-center gap-1 rounded px-2 py-1 transition-colors text-sm w-full ${
-                          readOnly ? 'cursor-default' : 'hover:bg-blue-50'
-                        }`}
-                        title="Clique para editar"
-                        disabled={readOnly}
-                      >
-                        <span className="font-bold text-green-700">{formatCurrency(proposal.monthlyValue)}</span>
-                        {!readOnly && (
-                          <Edit className="w-3 h-3 text-gray-400 opacity-0 group-hover:opacity-100 transition-opacity" />
-                        )}
-                      </button>
-                    )}
-                  </div>
-
-                  {/* Margem % */}
-                  <div>
-                    <div className="text-xs font-semibold text-gray-500 uppercase mb-1.5">Margem</div>
-                    {editingMargem && !readOnly ? (
-                      <div className="flex items-center gap-1">
-                        <input
-                          type="number"
-                          step="0.01"
-                          placeholder="0"
-                          value={tempMargem}
-                          onChange={(e) => setTempMargem(e.target.value)}
-                          className="w-full px-2 py-1 text-xs border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500"
-                          autoFocus
-                          onKeyDown={(e) => {
-                            if (e.key === 'Enter') handleMargemSave();
-                            if (e.key === 'Escape') handleMargemCancel();
-                          }}
-                        />
-                        <span className="text-xs text-gray-600">%</span>
-                        <button onClick={handleMargemSave} className="p-0.5 text-green-600 hover:text-green-800">
-                          <Save className="w-3 h-3" />
-                        </button>
-                        <button onClick={handleMargemCancel} className="p-0.5 text-red-600 hover:text-red-800">
-                          <X className="w-3 h-3" />
-                        </button>
-                      </div>
-                    ) : (
-                      <button
-                        onClick={handleMargemEdit}
-                        className={`group flex items-center gap-1 rounded px-2 py-1 transition-colors text-sm w-full ${
-                          readOnly ? 'cursor-default' : 'hover:bg-blue-50'
-                        }`}
-                        title={readOnly ? "Somente leitura" : "Clique para editar margem"}
-                        disabled={readOnly}
-                      >
-                        <span className="font-bold text-blue-700">
-                          {proposal.margemPercentual ? `${proposal.margemPercentual.toFixed(2)}%` : '-'}
-                        </span>
-                        {!readOnly && (
-                          <Edit className="w-3 h-3 text-gray-400 opacity-0 group-hover:opacity-100 transition-opacity" />
-                        )}
-                      </button>
-                    )}
-                  </div>
-
-                  {/* Cidade */}
-                  <div>
-                    <div className="text-xs font-semibold text-gray-500 uppercase mb-1.5">Cidade</div>
-                    {editingCidade && !readOnly ? (
-                      <div className="flex items-center gap-1">
-                        <input
-                          type="text"
-                          placeholder="Ex: São Paulo"
-                          value={tempCidade}
-                          onChange={(e) => setTempCidade(e.target.value)}
-                          className="w-full px-2 py-1 text-xs border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500"
-                          autoFocus
-                          onKeyDown={(e) => {
-                            if (e.key === 'Enter') handleCidadeSave();
-                            if (e.key === 'Escape') handleCidadeCancel();
-                          }}
-                        />
-                        <button onClick={handleCidadeSave} className="p-0.5 text-green-600 hover:text-green-800">
-                          <Save className="w-3 h-3" />
-                        </button>
-                        <button onClick={handleCidadeCancel} className="p-0.5 text-red-600 hover:text-red-800">
-                          <X className="w-3 h-3" />
-                        </button>
-                      </div>
-                    ) : (
-                      <button
-                        onClick={handleCidadeEdit}
-                        className={`group flex items-center gap-1 rounded px-2 py-1 transition-colors text-sm w-full ${
-                          readOnly ? 'cursor-default' : 'hover:bg-blue-50'
-                        }`}
-                        title={readOnly ? "Somente leitura" : "Clique para editar cidade"}
-                        disabled={readOnly}
-                      >
-                        <span className="font-bold text-purple-700">
-                          {proposal.cidade || '-'}
-                        </span>
-                        {!readOnly && (
-                          <Edit className="w-3 h-3 text-gray-400 opacity-0 group-hover:opacity-100 transition-opacity" />
-                        )}
-                      </button>
-                    )}
-                  </div>
-                </div>
-              </div>
             </div>
 
-            {/* Data de Inclusão */}
+            {/* Valor Mensal */}
             <div className="col-span-2">
-              <div className="text-xs font-semibold text-gray-500 uppercase mb-2">Data de Inclusão</div>
-              {editingDate ? (
-                <div className="flex items-center gap-1">
+              <div className="text-[10px] font-semibold text-gray-500 uppercase mb-0.5">Valor Mensal</div>
+              {editingValue && !readOnly ? (
+                <div className="flex items-center gap-0.5">
                   <input
-                    type="date"
-                    value={tempDate}
-                    onChange={(e) => setTempDate(e.target.value)}
-                    className="w-full px-2 py-1 text-xs border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500"
+                    type="number"
+                    value={tempValue}
+                    onChange={(e) => setTempValue(e.target.value)}
+                    className="w-full px-1.5 py-0.5 text-xs border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500"
                     autoFocus
                     onKeyDown={(e) => {
-                      if (e.key === 'Enter') handleDateSave();
-                      if (e.key === 'Escape') handleDateCancel();
+                      if (e.key === 'Enter') handleValueSave();
+                      if (e.key === 'Escape') handleValueCancel();
                     }}
                   />
-                  <button onClick={handleDateSave} className="p-0.5 text-green-600 hover:text-green-800">
+                  <button onClick={handleValueSave} className="p-0.5 text-green-600 hover:text-green-800">
                     <Save className="w-3 h-3" />
                   </button>
-                  <button onClick={handleDateCancel} className="p-0.5 text-red-600 hover:text-red-800">
+                  <button onClick={handleValueCancel} className="p-0.5 text-red-600 hover:text-red-800">
                     <X className="w-3 h-3" />
                   </button>
                 </div>
               ) : (
                 <button
-                  onClick={handleDateEdit}
-                  className="group flex items-center gap-1 hover:bg-blue-50 rounded px-2 py-1.5 transition-colors text-sm"
+                  onClick={handleValueEdit}
+                  className={`group flex items-center gap-0.5 rounded px-1.5 py-0.5 transition-colors text-xs w-full ${
+                    readOnly ? 'cursor-default' : 'hover:bg-blue-50'
+                  }`}
                   title="Clique para editar"
+                  disabled={readOnly}
                 >
-                  <span className="font-medium text-gray-900">{displayDate(proposal.createdAt)}</span>
-                  <Edit className="w-3 h-3 text-gray-400 opacity-0 group-hover:opacity-100 transition-opacity" />
+                  <span className="font-bold text-green-700">{formatCurrency(proposal.monthlyValue)}</span>
+                  {!readOnly && (
+                    <Edit className="w-2.5 h-2.5 text-gray-400 opacity-0 group-hover:opacity-100 transition-opacity" />
+                  )}
+                </button>
+              )}
+            </div>
+
+            {/* Margem % */}
+            <div className="col-span-2">
+              <div className="text-[10px] font-semibold text-gray-500 uppercase mb-0.5">Margem</div>
+              {editingMargem && !readOnly ? (
+                <div className="flex items-center gap-0.5">
+                  <input
+                    type="number"
+                    step="0.01"
+                    placeholder="0"
+                    value={tempMargem}
+                    onChange={(e) => setTempMargem(e.target.value)}
+                    className="w-full px-1 py-0.5 text-xs border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500"
+                    autoFocus
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter') handleMargemSave();
+                      if (e.key === 'Escape') handleMargemCancel();
+                    }}
+                  />
+                  <button onClick={handleMargemSave} className="p-0.5 text-green-600 hover:text-green-800">
+                    <Save className="w-2.5 h-2.5" />
+                  </button>
+                  <button onClick={handleMargemCancel} className="p-0.5 text-red-600 hover:text-red-800">
+                    <X className="w-2.5 h-2.5" />
+                  </button>
+                </div>
+              ) : (
+                <button
+                  onClick={handleMargemEdit}
+                  className={`group flex items-center gap-0.5 rounded px-1 py-0.5 transition-colors text-xs ${
+                    readOnly ? 'cursor-default' : 'hover:bg-blue-50'
+                  }`}
+                  title={readOnly ? "Somente leitura" : "Clique para editar margem"}
+                  disabled={readOnly}
+                >
+                  <span className="font-bold text-blue-700">
+                    {proposal.margemPercentual ? `${proposal.margemPercentual.toFixed(2)}%` : '-'}
+                  </span>
+                  {!readOnly && (
+                    <Edit className="w-2.5 h-2.5 text-gray-400 opacity-0 group-hover:opacity-100 transition-opacity" />
+                  )}
                 </button>
               )}
             </div>
 
             {/* Probabilidade */}
             <div className="col-span-2">
-              <div className="text-xs font-semibold text-gray-500 uppercase mb-2">Probabilidade</div>
+              <div className="text-[10px] font-semibold text-gray-500 uppercase mb-0.5">Probabilidade</div>
               <button
                 onClick={() => !readOnly && setShowProbabilityModal(true)}
-                className={`inline-flex px-3 py-1.5 rounded-full text-xs font-medium border hover:opacity-80 transition-opacity ${probabilityDisplay.bgColor} ${probabilityDisplay.color} border-current whitespace-nowrap`}
+                className={`inline-flex px-2 py-0.5 rounded-full text-[10px] font-medium border hover:opacity-80 transition-opacity ${probabilityDisplay.bgColor} ${probabilityDisplay.color} border-current whitespace-nowrap w-full justify-center`}
                 title={readOnly ? "Somente leitura" : "Clique para avaliar probabilidade"}
                 disabled={readOnly}
               >
@@ -513,7 +430,7 @@ export const ProposalCard: React.FC<ProposalCardProps> = ({
 
             {/* Status */}
             <div className="col-span-2">
-              <div className="text-xs font-semibold text-gray-500 uppercase mb-2">Status</div>
+              <div className="text-[10px] font-semibold text-gray-500 uppercase mb-0.5">Status</div>
               <StatusDropdown
                 currentStatus={proposal.status}
                 proposalId={proposal.id}
@@ -522,37 +439,155 @@ export const ProposalCard: React.FC<ProposalCardProps> = ({
                 readOnly={readOnly}
               />
             </div>
+          </div>
+
+          {/* LINHA 2: Cidade, Closer, SDR, Família, Data da Inclusão */}
+          <div className="grid grid-cols-12 gap-3 items-center mb-2 pb-2 border-b border-gray-100">
+            {/* Cidade */}
+            <div className="col-span-2">
+              <div className="text-[10px] font-semibold text-gray-500 uppercase mb-0.5">Cidade</div>
+              {editingCidade && !readOnly ? (
+                <div className="flex items-center gap-0.5">
+                  <input
+                    type="text"
+                    placeholder="Ex: São Paulo"
+                    value={tempCidade}
+                    onChange={(e) => setTempCidade(e.target.value)}
+                    className="w-full px-1.5 py-0.5 text-xs border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500"
+                    autoFocus
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter') handleCidadeSave();
+                      if (e.key === 'Escape') handleCidadeCancel();
+                    }}
+                  />
+                  <button onClick={handleCidadeSave} className="p-0.5 text-green-600 hover:text-green-800">
+                    <Save className="w-2.5 h-2.5" />
+                  </button>
+                  <button onClick={handleCidadeCancel} className="p-0.5 text-red-600 hover:text-red-800">
+                    <X className="w-2.5 h-2.5" />
+                  </button>
+                </div>
+              ) : (
+                <button
+                  onClick={handleCidadeEdit}
+                  className={`group flex items-center gap-0.5 rounded px-1.5 py-0.5 transition-colors text-xs truncate max-w-full ${
+                    readOnly ? 'cursor-default' : 'hover:bg-blue-50'
+                  }`}
+                  title={readOnly ? "Somente leitura" : "Clique para editar cidade"}
+                  disabled={readOnly}
+                >
+                  <span className="font-bold text-purple-700 truncate">
+                    {proposal.cidade || '-'}
+                  </span>
+                  {!readOnly && (
+                    <Edit className="w-2.5 h-2.5 text-gray-400 opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0" />
+                  )}
+                </button>
+              )}
+            </div>
 
             {/* Closer */}
-            <div className="col-span-1">
-              <div className="text-xs font-semibold text-gray-500 uppercase mb-2">Closer</div>
-              <div className="text-sm">
-                <span className="font-medium text-gray-900 block">{closer?.name || 'N/D'}</span>
+            <div className="col-span-3">
+              <div className="text-[10px] font-semibold text-gray-500 uppercase mb-0.5">Closer</div>
+              <div className="text-xs px-1.5 py-0.5">
+                <span className="font-medium text-gray-900 block truncate">{closer?.name || 'N/D'}</span>
               </div>
             </div>
 
             {/* SDR */}
-            <div className="col-span-1">
-              <div className="text-xs font-semibold text-gray-500 uppercase mb-2">SDR</div>
-              <div className="text-sm">
-                <span className="font-medium text-gray-900 block">{sdr?.name || 'N/D'}</span>
+            <div className="col-span-2">
+              <div className="text-[10px] font-semibold text-gray-500 uppercase mb-0.5">SDR</div>
+              <div className="text-xs px-1.5 py-0.5">
+                <span className="font-medium text-gray-900 block truncate">{sdr?.name || 'N/D'}</span>
               </div>
             </div>
 
+            {/* Família */}
+            <div className="col-span-2">
+              <div className="text-[10px] font-semibold text-gray-500 uppercase mb-0.5">Família</div>
+              <div className="px-1.5 py-0.5 text-xs">
+                <span className="font-medium text-gray-900 truncate block">{proposal.familia || '-'}</span>
+              </div>
+            </div>
+
+            {/* Data de Inclusão */}
+            <div className="col-span-3">
+              <div className="text-[10px] font-semibold text-gray-500 uppercase mb-0.5">Data da Inclusão</div>
+              {editingDate ? (
+                <div className="flex items-center gap-0.5">
+                  <input
+                    type="date"
+                    value={tempDate}
+                    onChange={(e) => setTempDate(e.target.value)}
+                    className="w-full px-1.5 py-0.5 text-xs border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500"
+                    autoFocus
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter') handleDateSave();
+                      if (e.key === 'Escape') handleDateCancel();
+                    }}
+                  />
+                  <button onClick={handleDateSave} className="p-0.5 text-green-600 hover:text-green-800">
+                    <Save className="w-2.5 h-2.5" />
+                  </button>
+                  <button onClick={handleDateCancel} className="p-0.5 text-red-600 hover:text-red-800">
+                    <X className="w-2.5 h-2.5" />
+                  </button>
+                </div>
+              ) : (
+                <button
+                  onClick={handleDateEdit}
+                  className="group flex items-center gap-0.5 hover:bg-blue-50 rounded px-1.5 py-0.5 transition-colors text-xs"
+                  title="Clique para editar"
+                >
+                  <span className="font-medium text-gray-900">{displayDate(proposal.createdAt)}</span>
+                  <Edit className="w-2.5 h-2.5 text-gray-400 opacity-0 group-hover:opacity-100 transition-opacity" />
+                </button>
+              )}
+            </div>
+          </div>
+
+          {/* LINHA 3: Tempo da Proposta, Ações */}
+          <div className="grid grid-cols-12 gap-3 items-center">
+            {/* Tempo da Proposta */}
+            <div className="col-span-10">
+              {(proposal.status === 'Proposta' || proposal.status === 'Negociação' || proposal.status === 'Análise de contrato') && (
+                <div className="text-center py-1.5 px-3 bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-200 rounded text-xs">
+                  <span className="font-medium text-blue-800">
+                    📅 EM ABERTO HÁ {calculateTimeDifference(proposal.createdAt, new Date().toISOString())}
+                  </span>
+                </div>
+              )}
+
+              {proposal.status === 'Fechado' && proposal.closingDate && (
+                <div className="text-center py-1.5 px-3 bg-gradient-to-r from-green-50 to-emerald-50 border border-green-200 rounded text-xs">
+                  <span className="font-medium text-green-800">
+                    ⏱️ FECHADO EM {calculateTimeDifference(proposal.createdAt, proposal.closingDate)}
+                  </span>
+                </div>
+              )}
+
+              {proposal.status === 'Perdido' && (
+                <div className="text-center py-1.5 px-3 bg-gradient-to-r from-red-50 to-rose-50 border border-red-200 rounded text-xs">
+                  <span className="font-medium text-red-800">
+                    ❌ PERDIDO
+                  </span>
+                </div>
+              )}
+            </div>
+
             {/* Ações */}
-            <div className="col-span-1">
-              <div className="text-xs font-semibold text-gray-500 uppercase mb-2">Ações</div>
-              <div className="flex flex-col items-stretch gap-2">
+            <div className="col-span-2">
+              <div className="flex items-center gap-1.5 justify-end">
                 <ObservationsButton proposalId={proposal.id} proposalClient={proposal.client} readOnly={readOnly} />
                 {!readOnly ? (
                   <button
                     onClick={() => setShowEditModal(true)}
-                    className="px-3 py-1.5 bg-blue-600 text-white rounded text-xs font-medium hover:bg-blue-700 transition-colors whitespace-nowrap text-center"
+                    className="px-3 py-1.5 bg-blue-600 text-white rounded text-[10px] font-medium hover:bg-blue-700 transition-colors whitespace-nowrap"
                   >
                     Editar
                   </button>
                 ) : (
-                  <span className="px-3 py-1.5 bg-gray-300 text-gray-500 rounded text-xs font-medium whitespace-nowrap text-center">
+                  <span className="px-3 py-1.5 bg-gray-300 text-gray-500 rounded text-[10px] font-medium whitespace-nowrap">
                     Bloqueado
                   </span>
                 )}
@@ -560,27 +595,6 @@ export const ProposalCard: React.FC<ProposalCardProps> = ({
             </div>
           </div>
         </div>
-
-        {/* Linha de informação de tempo */}
-        {(proposal.status === 'Proposta' || proposal.status === 'Negociação' || proposal.status === 'Análise de contrato') && (
-          <div className="px-4 pb-4">
-            <div className="text-center py-2 bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-200 rounded text-xs">
-              <span className="font-medium text-blue-800">
-                📅 EM ABERTO HÁ {calculateTimeDifference(proposal.createdAt, new Date().toISOString())}
-              </span>
-            </div>
-          </div>
-        )}
-
-        {proposal.status === 'Fechado' && proposal.closingDate && (
-          <div className="px-4 pb-4">
-            <div className="text-center py-2 bg-gradient-to-r from-green-50 to-emerald-50 border border-green-200 rounded text-xs">
-              <span className="font-medium text-green-800">
-                ⏱️ FECHADO EM {calculateTimeDifference(proposal.createdAt, proposal.closingDate)}
-              </span>
-            </div>
-          </div>
-        )}
       </div>
 
       {!readOnly && <ProbabilityModal

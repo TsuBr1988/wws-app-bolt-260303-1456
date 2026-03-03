@@ -3,14 +3,33 @@
 ## Variáveis de ambiente
 Este projeto é um **Vite + React** e usa Supabase.
 
-- `VITE_SUPABASE_URL`
-- `VITE_SUPABASE_ANON_KEY`
+- `VITE_SUPABASE_GERAL_URL`
+- `VITE_SUPABASE_GERAL_ANON`
+- `VITE_SUPABASE_FINANCAS_URL`
+- `VITE_SUPABASE_FINANCAS_ANON`
+- `VITE_SUPABASE_COMERCIAL_PRIVADO_URL`
+- `VITE_SUPABASE_COMERCIAL_PRIVADO_ANON`
+- `VITE_SUPABASE_COMERCIAL_PUBLICO_URL`
+- `VITE_SUPABASE_COMERCIAL_PUBLICO_ANON`
 
 Regras importantes do Vite:
 - Variáveis expostas no client precisam começar com `VITE_`.
 - As variáveis são lidas **em build/dev time** (ou seja, precisam existir no ambiente no momento do `npm run dev` e do `npm run build`).
 
 Crie um arquivo `.env` a partir de `.env.example`.
+
+### Organização de bancos
+- `app-wws-geral`: RH, Operacional, Comercial (geral), Compras, Qualidade, Cultura, Atas
+- `app-wws-financas`: Finanças / Financeiro
+- `app-wws-comercial-privado`: Comercial Privado (inclui Orçamentos)
+- `app-wws-comercial-publico`: Comercial Público
+
+### Regra de acesso
+O código deve usar `getDatabase()` para resolver o client por módulo, em vez de criar client local fora da camada central.
+
+Arquivos base:
+- `src/lib/supabaseClients.ts`
+- `src/lib/databaseResolver.ts`
 
 ### Regras
 - Qualquer coisa que seja **secreta** (service role, chaves privadas, tokens) fica em variável de ambiente.

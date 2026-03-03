@@ -497,6 +497,8 @@ export interface Database {
           monthly_value: number
           months: number
           total_value: number
+          margem_lucro: number | null
+          margem_adm: number | null
           status: 'Desclassificados no início' | 'Edital não qualificado' | 'Em negociação' | 'Proposta' | 'Lances' | 'Declinamos/ Não teve pregão' | 'Desclassificado na planilha' | 'Inabilitado' | 'Planilha aceita / Aguardando habilitação' | 'Habilitado/ Aguardando recurso' | 'Contrato assinado' | 'Suspenso' | 'Encerrado' | 'Em montagem' | 'Classificação' | 'Avaliação de efetividade (avaliação de planilha)' | 'Habilitação' | 'Relatório de divulgação' | 'Abertura de recursos' | 'Relatório final / Homologação' | 'Fechado' | 'Negociação' | 'Perdido'
           commission: number
           commission_rate: number
@@ -530,6 +532,8 @@ export interface Database {
           monthly_value: number
           months: number
           total_value: number
+          margem_lucro?: number | null
+          margem_adm?: number | null
           status?: 'Desclassificados no início' | 'Edital não qualificado' | 'Em negociação' | 'Proposta' | 'Lances' | 'Declinamos/ Não teve pregão' | 'Desclassificado na planilha' | 'Inabilitado' | 'Planilha aceita / Aguardando habilitação' | 'Habilitado/ Aguardando recurso' | 'Contrato assinado' | 'Suspenso' | 'Encerrado' | 'Em montagem' | 'Classificação' | 'Avaliação de efetividade (avaliação de planilha)' | 'Habilitação' | 'Relatório de divulgação' | 'Abertura de recursos' | 'Relatório final / Homologação' | 'Fechado' | 'Negociação' | 'Perdido'
           commission?: number
           commission_rate?: number
@@ -563,6 +567,8 @@ export interface Database {
           monthly_value?: number
           months?: number
           total_value?: number
+          margem_lucro?: number | null
+          margem_adm?: number | null
           status?: 'Desclassificados no início' | 'Edital não qualificado' | 'Em negociação' | 'Proposta' | 'Lances' | 'Declinamos/ Não teve pregão' | 'Desclassificado na planilha' | 'Inabilitado' | 'Planilha aceita / Aguardando habilitação' | 'Habilitado/ Aguardando recurso' | 'Contrato assinado' | 'Suspenso' | 'Encerrado' | 'Em montagem' | 'Classificação' | 'Avaliação de efetividade (avaliação de planilha)' | 'Habilitação' | 'Relatório de divulgação' | 'Abertura de recursos' | 'Relatório final / Homologação' | 'Fechado' | 'Negociação' | 'Perdido'
           commission?: number
           commission_rate?: number

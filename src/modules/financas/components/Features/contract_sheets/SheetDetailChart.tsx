@@ -41,7 +41,7 @@ export const SheetDetailChart: React.FC<SheetDetailChartProps> = ({ chartData })
               tickFormatter={(val) => `R$ ${(val / 1000).toFixed(0)}k`}
             />
             <Tooltip
-              formatter={(value: number) => formatCurrency(value)}
+              formatter={(value) => formatCurrency(Number(value ?? 0))}
               contentStyle={{
                 borderRadius: '12px',
                 border: 'none',

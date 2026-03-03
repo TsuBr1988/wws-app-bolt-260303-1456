@@ -22,6 +22,16 @@ export interface ProbabilityScores {
 
 const criteria = [
   {
+    key: 'metrics' as keyof ProbabilityScores,
+    title: 'Metrics (Objetivos)',
+    description: 'Sabemos qual o objetivo que ajudamos o Lead a alcançar quando contratam a WWS?',
+    levels: {
+      1: 'Objetivos vagos ou desconhecidos',
+      2: 'Objetivos parcialmente definidos',
+      3: 'Objetivos claros e mensuráveis'
+    }
+  },
+  {
     key: 'economicBuyer' as keyof ProbabilityScores,
     title: 'Economic Buyer (Tomador de Decisão)',
     description: 'Identificação e acesso ao verdadeiro tomador de decisão',
@@ -32,19 +42,9 @@ const criteria = [
     }
   },
   {
-    key: 'metrics' as keyof ProbabilityScores,
-    title: 'Metrics (Objetivos)',
-    description: 'Clareza sobre os objetivos e métricas do cliente',
-    levels: {
-      1: 'Objetivos vagos ou desconhecidos',
-      2: 'Objetivos parcialmente definidos',
-      3: 'Objetivos claros e mensuráveis'
-    }
-  },
-  {
     key: 'decisionCriteria' as keyof ProbabilityScores,
     title: 'Decision Criteria',
-    description: 'Critérios de decisão do cliente',
+    description: 'Qual o nosso conhecimento e a nossa clareza sobre os critérios de decisão que farão o cliente decidir pela melhor empresa? Localização? Cor do uniforme? A empresa tem que ter certificação?',
     levels: {
       1: 'Critérios desconhecidos',
       2: 'Alguns critérios identificados',
@@ -54,7 +54,7 @@ const criteria = [
   {
     key: 'decisionProcess' as keyof ProbabilityScores,
     title: 'Decision Process',
-    description: 'Processo de tomada de decisão',
+    description: 'Qual o nosso conhecimento e a nossa clareza sobre como é o processo de definição? Passa por quem? Quais as etapas? Como podemos influenciar melhor uma etapa?',
     levels: {
       1: 'Processo desconhecido',
       2: 'Processo parcialmente mapeado',
@@ -64,7 +64,7 @@ const criteria = [
   {
     key: 'identifyPain' as keyof ProbabilityScores,
     title: 'Identify Pain',
-    description: 'Identificação das dores e necessidades',
+    description: 'Qual a dor? Tem certeza? Aprofundou na dor real do cliente? Rodou o SPIN para saber se realmente a implicação daquela dor que ele apresentou faz diferença ser resolvida?',
     levels: {
       1: 'Dores superficiais ou genéricas',
       2: 'Algumas dores específicas identificadas',
@@ -74,7 +74,7 @@ const criteria = [
   {
     key: 'champion' as keyof ProbabilityScores,
     title: 'Champion/Influenciador',
-    description: 'Presença de um defensor interno',
+    description: 'Champion é a pessoa que não toma decisão porém tem influência. Qual o engajamento do Champion? Quanto ele está pronto para nos vender e convencer o tomador?',
     levels: {
       1: 'Sem champion identificado',
       2: 'Champion identificado mas neutro',
@@ -84,7 +84,7 @@ const criteria = [
   {
     key: 'competition' as keyof ProbabilityScores,
     title: 'Competition',
-    description: 'Conhecimento sobre a concorrência',
+    description: 'Sabemos ao certo quem é nosso concorrente? Lembrando que podemos concorrer contra outras empresas, contra o próprio orçamento do cliente, concorrer com um projeto de reforma que usaria o dinheiro.',
     levels: {
       1: 'Concorrência desconhecida',
       2: 'Alguns concorrentes identificados',
@@ -94,7 +94,7 @@ const criteria = [
   {
     key: 'engagement' as keyof ProbabilityScores,
     title: 'Engagement',
-    description: 'Nível de engajamento do cliente',
+    description: 'Quão engajado está o cliente? Responde rápido? Está interessado? Perguntando? Ou está frio?',
     levels: {
       1: 'Baixo engajamento',
       2: 'Engajamento moderado',
@@ -190,7 +190,7 @@ export const ProbabilityModal: React.FC<ProbabilityModalProps> = ({
               </div>
             </div>
             <div className="mt-2 text-sm text-gray-700">
-              <strong>Cálculo:</strong> {Object.entries(scores).map(([key, value]) => `${value}`).join(' + ')} = {totalScore} pontos
+              <strong>Cálculo:</strong> {criteria.map((c) => `${scores[c.key]}`).join(' + ')} = {totalScore} pontos
             </div>
           </div>
 

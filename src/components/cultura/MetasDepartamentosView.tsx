@@ -1,5 +1,7 @@
 import { useState, useEffect } from 'react';
-import { supabase } from '@/lib/supabase';
+import { getDatabase } from '@/lib/databaseResolver';
+
+const supabase = getDatabase('CULTURA');
 import { useToast } from '@/components/ui/use-toast';
 import { Button } from '@/components/ui/button';
 import { Plus, Save, X, Trash2, GripVertical } from 'lucide-react';

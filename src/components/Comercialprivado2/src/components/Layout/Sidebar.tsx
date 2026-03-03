@@ -8,8 +8,7 @@ import {
   Award,
   Settings,
   CalendarDays,
-  ClipboardList,
-  Megaphone
+  ClipboardList
 } from 'lucide-react';
 import { VersionSelector } from './VersionSelector';
 import { useYear } from '../../contexts/YearContext';
@@ -24,7 +23,6 @@ const menuItems = [
   { id: 'commercial-goals', label: 'Metas Comerciais', permissionName: 'Metas Comerciais', icon: TrendingUp },
   { id: 'proposals', label: 'Propostas', permissionName: 'Propostas', icon: FileText },
   { id: 'budgets', label: 'Orçamentos', permissionName: 'Orçamentos', icon: ClipboardList },
-  { id: 'marketing', label: 'Marketing', permissionName: 'Marketing', icon: Megaphone },
   { id: 'commissions', label: 'Comissões', permissionName: 'Comissões', icon: DollarSign },
   { id: 'bonus-fund', label: 'Fundo de Bônus', permissionName: 'Fundo de Bônus', icon: PiggyBank },
   { id: 'challenges', label: 'Desafios', permissionName: 'Desafios', icon: Award },

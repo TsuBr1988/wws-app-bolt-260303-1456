@@ -34,7 +34,7 @@ interface SingleMonthChartData {
   margem_percentual?: number;
 }
 
-const CustomTooltip = ({ active, payload }: TooltipProps<number, string>) => {
+const CustomTooltip = ({ active, payload }: any) => {
   if (!active || !payload || payload.length === 0) return null;
 
   const data = payload[0].payload;
@@ -42,7 +42,7 @@ const CustomTooltip = ({ active, payload }: TooltipProps<number, string>) => {
   return (
     <div className="bg-white border border-gray-200 rounded-lg shadow-lg p-4 min-w-[200px]">
       <p className="text-sm font-semibold mb-2">{data.monthLabel || data.contract_name}</p>
-      {payload.map((entry, index) => {
+      {payload.map((entry: any, index: number) => {
         const isMargemContribuicao = entry.dataKey === 'margem_contribuicao';
         const percentual = isMargemContribuicao && data.margem_percentual !== undefined
           ? ` (${data.margem_percentual.toFixed(1)}%)`
@@ -981,7 +981,7 @@ export function StationResultsCard() {
                         domain={yAxisDomain}
                       />
                       <Tooltip
-                        formatter={(value: number) => `${value.toFixed(1)}%`}
+                        formatter={(value) => `${Number(value ?? 0).toFixed(1)}%`}
                         contentStyle={{ backgroundColor: 'white', border: '1px solid #ccc' }}
                       />
                       <Legend />
@@ -1014,7 +1014,7 @@ export function StationResultsCard() {
                         <LabelList
                           dataKey="folha_ft_percent"
                           position="top"
-                          formatter={(value: number) => `${value.toFixed(1)}%`}
+                          formatter={(value) => `${Number(value ?? 0).toFixed(1)}%`}
                           style={{ fontSize: '10px', fill: '#3b82f6' }}
                         />
                       </Line>
@@ -1029,7 +1029,7 @@ export function StationResultsCard() {
                         <LabelList
                           dataKey="csv_total_percent"
                           position="top"
-                          formatter={(value: number) => `${value.toFixed(1)}%`}
+                          formatter={(value) => `${Number(value ?? 0).toFixed(1)}%`}
                           style={{ fontSize: '10px', fill: '#f59e0b' }}
                         />
                       </Line>
@@ -1044,7 +1044,7 @@ export function StationResultsCard() {
                         <LabelList
                           dataKey="margem_contribuicao_percent"
                           position="top"
-                          formatter={(value: number) => `${value.toFixed(1)}%`}
+                          formatter={(value) => `${Number(value ?? 0).toFixed(1)}%`}
                           style={{ fontSize: '10px', fill: '#10b981' }}
                         />
                       </Line>

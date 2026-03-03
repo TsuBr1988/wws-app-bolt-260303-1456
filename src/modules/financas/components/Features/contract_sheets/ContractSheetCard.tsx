@@ -3,7 +3,7 @@ import { Calendar, TrendingUp, Eye, Trash2 } from 'lucide-react';
 import { ContractSheet } from '../../../types';
 import { formatCurrency } from '../../../utils';
 import { format } from 'date-fns';
-import ptBR from 'date-fns/locale/pt-BR';
+import { ptBR } from 'date-fns/locale/pt-BR';
 
 interface ContractSheetCardProps {
   sheet: ContractSheet;

@@ -44,6 +44,7 @@ interface NoteExchange {
     due_date: string;
     total_gross_amount: number;
     total_net_amount: number;
+    status?: 'pending' | 'effectivated';
     created_at: string;
     updated_at: string;
 }
@@ -1653,7 +1654,7 @@ const LoansTab: React.FC<LoansTabProps> = ({ selectedCompany, supabaseClient }) 
                                             fontSize: '14px',
                                             fontWeight: 600
                                         }}
-                                        formatter={(value: number) => formatCurrency(value)}
+                                        formatter={(value) => formatCurrency(Number(value ?? 0))}
                                     />
                                     <Legend />
                                     <Bar dataKey="paid" fill="#10b981" name="Pago" radius={[8, 8, 0, 0]} />

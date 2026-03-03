@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Plus, Trash2, Save, X, Calendar as CalendarIcon } from 'lucide-react';
-import { supabase } from '../../lib/supabase';
+import { SupabaseClient } from '@supabase/supabase-js';
 import { Button } from '../ui/button';
 import { useToast } from '../ui/use-toast';
 import { formatDateBR } from '../../lib/contractUtils';
@@ -31,11 +31,12 @@ interface EmployeePosition {
 
 interface ContractEmployeesProps {
   contractId: string;
+  supabaseClient: SupabaseClient;
   isExpanded?: boolean;
   onToggleExpand?: () => void;
 }
 
-export function ContractEmployees({ contractId, isExpanded = true, onToggleExpand }: ContractEmployeesProps) {
+export function ContractEmployees({ contractId, supabaseClient, isExpanded = true, onToggleExpand }: ContractEmployeesProps) {
   const [employees, setEmployees] = useState<ContractEmployee[]>([]);
   const [addendums, setAddendums] = useState<AddendumInfo[]>([]);
   const [contractStartDate, setContractStartDate] = useState<string>('');
@@ -55,7 +56,7 @@ export function ContractEmployees({ contractId, isExpanded = true, onToggleExpan
 
   const loadPositions = async () => {
     try {
-      const { data, error } = await supabase
+      const { data, error } = await supabaseClient
         .from('employee_positions')
         .select('id, name')
         .order('name');
@@ -71,7 +72,7 @@ export function ContractEmployees({ contractId, isExpanded = true, onToggleExpan
     try {
       setIsLoading(true);
 
-      const { data: contractData, error: contractError } = await supabase
+      const { data: contractData, error: contractError } = await supabaseClient
         .from('contracts')
         .select('start_date')
         .eq('id', contractId)
@@ -80,7 +81,7 @@ export function ContractEmployees({ contractId, isExpanded = true, onToggleExpan
       if (contractError) throw contractError;
       setContractStartDate(contractData.start_date);
 
-      const { data: employeesData, error: employeesError } = await supabase
+      const { data: employeesData, error: employeesError } = await supabaseClient
         .from('contract_employees')
         .select('id, position')
         .eq('contract_id', contractId)
@@ -97,7 +98,7 @@ export function ContractEmployees({ contractId, isExpanded = true, onToggleExpan
 
       const employeeIds = employeesData.map(e => e.id);
 
-      const { data: quantitiesData, error: quantitiesError } = await supabase
+      const { data: quantitiesData, error: quantitiesError } = await supabaseClient
         .from('contract_employee_quantities')
         .select('contract_employee_id, addendum_number, quantity, effective_date')
         .in('contract_employee_id', employeeIds);

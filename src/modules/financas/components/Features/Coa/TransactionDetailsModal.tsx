@@ -2,7 +2,7 @@
 import React from 'react';
 import { X, Loader2, Check } from 'lucide-react';
 import { format } from 'date-fns';
-import ptBR from 'date-fns/locale/pt-BR';
+import { ptBR } from 'date-fns/locale/pt-BR';
 import { Transaction, CoaNode } from '../../../types';
 import { formatCurrency } from '../../../utils';
 

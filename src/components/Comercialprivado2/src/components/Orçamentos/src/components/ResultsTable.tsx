@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import React, { useState } from 'react';
 import { ChevronDown, ChevronRight, Edit3, Printer } from 'lucide-react';
 import { FunctionData } from '../types';
 import { GRUPOS_ENCARGOS } from '../constants';
@@ -180,8 +180,8 @@ export const ResultsTable = ({ funcoesDados, issRate, margemLucro = 10, margemAd
             {encargos.map((grupo, gIdx) => {
               const sectionKey = `grupo${String.fromCharCode(65 + gIdx)}`;
               return (
-              <>
-                <tr key={`grupo-${gIdx}`} className="bg-blue-100 font-bold cursor-pointer hover:bg-blue-200" onClick={() => toggleSection(sectionKey)}>
+              <React.Fragment key={`encargo-${gIdx}`}>
+                <tr className="bg-blue-100 font-bold cursor-pointer hover:bg-blue-200" onClick={() => toggleSection(sectionKey)}>
                   <td className="border border-slate-300 px-3 py-2">
                     <div className="flex items-center gap-2">
                       {expandedSections[sectionKey] ? <ChevronDown size={16} /> : <ChevronRight size={16} />}
@@ -210,7 +210,8 @@ export const ResultsTable = ({ funcoesDados, issRate, margemLucro = 10, margemAd
                     </td>
                     {renderValueCells((f) => f.baseCalculoGeral * item.p)}
                   </tr>
-                ))}</>
+                ))}
+              </React.Fragment>
             );
             })}
 

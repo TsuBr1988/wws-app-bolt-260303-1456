@@ -225,6 +225,12 @@ export const LicitacaoDetails: React.FC<LicitacaoDetailsProps> = ({
     }).format(value);
   };
 
+  const formatPercent = (value?: number) => {
+    if (value == null) return '-';
+    if (!Number.isFinite(value)) return '-';
+    return `${value.toLocaleString('pt-BR', { maximumFractionDigits: 2 })}%`;
+  };
+
   return (
     <>
       <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
@@ -619,7 +625,7 @@ export const LicitacaoDetails: React.FC<LicitacaoDetailsProps> = ({
             {/* Informações do Pregão */}
             <div className="bg-gray-50 rounded-lg p-6">
               <h3 className="text-lg font-semibold text-gray-900 mb-4">Informações do Pregão</h3>
-              <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+              <div className="grid grid-cols-1 md:grid-cols-6 gap-6">
                 <div>
                   <label className="text-sm font-medium text-gray-500">Plataforma</label>
                   <div className="mt-1 text-gray-900">{licitacao.plataforma}</div>
@@ -631,6 +637,14 @@ export const LicitacaoDetails: React.FC<LicitacaoDetailsProps> = ({
                 <div>
                   <label className="text-sm font-medium text-gray-500">Valor Estimado</label>
                   <div className="mt-1 text-gray-900">{formatCurrency(licitacao.valorEstimado)}</div>
+                </div>
+                <div>
+                  <label className="text-sm font-medium text-gray-500">Margem de lucro (%)</label>
+                  <div className="mt-1 text-gray-900">{formatPercent(licitacao.margemLucro)}</div>
+                </div>
+                <div>
+                  <label className="text-sm font-medium text-gray-500">Margem adm (%)</label>
+                  <div className="mt-1 text-gray-900">{formatPercent(licitacao.margemAdm)}</div>
                 </div>
                 <div>
                   <label className="text-sm font-medium text-gray-500">Tempo do Contrato</label>

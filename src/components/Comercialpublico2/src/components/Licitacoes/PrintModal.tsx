@@ -12,6 +12,12 @@ interface PrintModalProps {
 export const PrintModal: React.FC<PrintModalProps> = ({ licitacoes, onClose }) => {
   const { data: employees = [] } = useSupabaseQuery('employees');
 
+  const formatPercent = (value?: number) => {
+    if (value == null) return '-';
+    if (!Number.isFinite(value)) return '-';
+    return `${value.toLocaleString('pt-BR', { maximumFractionDigits: 2 })}%`;
+  };
+
   // Filtrar apenas licitações Em andamento ou Aguardando
   const licitacoesParaImprimir = licitacoes.filter(
     l => l.situacao === 'Em andamento' || l.situacao === 'Aguardando'
@@ -90,6 +96,12 @@ export const PrintModal: React.FC<PrintModalProps> = ({ licitacoes, onClose }) =
                       Nosso Lance
                     </th>
                     <th className="border border-gray-300 px-4 py-3 text-center text-sm font-semibold text-gray-900">
+                      Margem lucro
+                    </th>
+                    <th className="border border-gray-300 px-4 py-3 text-center text-sm font-semibold text-gray-900">
+                      Margem adm
+                    </th>
+                    <th className="border border-gray-300 px-4 py-3 text-center text-sm font-semibold text-gray-900">
                       Colocação
                     </th>
                   </tr>
@@ -154,6 +166,12 @@ export const PrintModal: React.FC<PrintModalProps> = ({ licitacoes, onClose }) =
                             ? formatCurrency(licitacao.nossoLance)
                             : formatCurrency(licitacao.valorEstimado || 0)
                           }
+                        </td>
+                        <td className="border border-gray-300 px-4 py-2 text-sm text-gray-900 text-center">
+                          {formatPercent(licitacao.margemLucro)}
+                        </td>
+                        <td className="border border-gray-300 px-4 py-2 text-sm text-gray-900 text-center">
+                          {formatPercent(licitacao.margemAdm)}
                         </td>
                         <td className="border border-gray-300 px-4 py-2 text-sm text-gray-900 text-center">
                           {licitacao.colocacaoAtual || licitacao.posicaoAtual ? (

@@ -11,9 +11,10 @@ import {
   getClosestEndDate,
 } from '../../lib/contractUtils';
 import { ContractEmployees } from './ContractEmployees';
-import { supabase } from '../../lib/supabase';
+import { SupabaseClient } from '@supabase/supabase-js';
 
 interface ContractCardProps {
+  supabaseClient: SupabaseClient;
   contract: ContractWithAddendums;
   onEditClick: () => void;
   onAddendumClick: () => void;
@@ -23,6 +24,7 @@ interface ContractCardProps {
 }
 
 export function ContractCard({
+  supabaseClient,
   contract,
   onEditClick,
   onAddendumClick,
@@ -53,7 +55,7 @@ export function ContractCard({
     try {
       setIsLoadingTotal(true);
 
-      const { data: employeesData, error: employeesError } = await supabase
+      const { data: employeesData, error: employeesError } = await supabaseClient
         .from('contract_employees')
         .select('id')
         .eq('contract_id', contract.id);
@@ -68,7 +70,7 @@ export function ContractCard({
 
       const employeeIds = employeesData.map(e => e.id);
 
-      const { data: quantitiesData, error: quantitiesError } = await supabase
+      const { data: quantitiesData, error: quantitiesError } = await supabaseClient
         .from('contract_employee_quantities')
         .select('contract_employee_id, addendum_number, quantity, effective_date')
         .in('contract_employee_id', employeeIds);
@@ -293,6 +295,7 @@ export function ContractCard({
           <div className="mt-4 pt-4 border-t border-gray-200">
             <ContractEmployees
               contractId={contract.id}
+              supabaseClient={supabaseClient}
               isExpanded={isEmployeesExpanded}
               onToggleExpand={loadTotalEmployees}
             />

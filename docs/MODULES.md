@@ -5,6 +5,42 @@ Permitir que o sistema cresça ao longo do tempo adicionando **módulos novos** 
 
 Regra do template: todo sistema nasce com o módulo **Configurações** (`/configuracoes`).
 
+## Mapeamento oficial de módulos para banco
+Mapeamento obrigatório neste projeto:
+
+- Banco: `app-wws-geral`
+  - `RH`, `OPERACIONAL`, `COMERCIAL` (estrutura geral), `COMPRAS`, `QUALIDADE`, `CULTURA`, `ATAS`
+- Banco: `app-wws-financas`
+  - `FINANCAS`
+- Banco: `app-wws-comercial-privado`
+  - `COMERCIAL_PRIVADO`
+- Banco: `app-wws-comercial-publico`
+  - `COMERCIAL_PUBLICO`
+
+Regras absolutas:
+
+- `FINANCAS` nunca usa banco geral.
+- `COMERCIAL_PRIVADO` nunca usa banco geral.
+- `COMERCIAL_PUBLICO` nunca usa banco geral.
+- Módulos do banco geral nunca usam banco comercial/finanças.
+
+## Padrão definitivo de código
+Sempre usar o resolver central:
+
+```ts
+import { getDatabase } from '@/lib/databaseResolver'
+
+const db = getDatabase('ATAS')
+const { data, error } = await db.from('meeting_minutes').select('*')
+```
+
+Arquivos de infraestrutura:
+
+- `src/lib/supabaseClients.ts`
+- `src/lib/databaseResolver.ts`
+
+Não criar clients ad-hoc nos módulos quando o resolver já atende o domínio.
+
 ## O que é um módulo
 Um módulo é uma unidade de negócio com:
 - Escopo claro (um “domínio”)

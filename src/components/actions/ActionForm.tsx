@@ -2,8 +2,10 @@ import { useState, useEffect } from 'react';
 import { X } from 'lucide-react';
 import { Button } from '../ui/button';
 import { Input } from '../ui/input';
-import { supabase } from '../../lib/supabase';
+import { getDatabase } from '../../lib/databaseResolver';
 import type { Action } from '../../pages/AtasAcoesPage';
+
+const supabase = getDatabase('ATAS');
 
 interface ActionFormProps {
   action?: Action | null;

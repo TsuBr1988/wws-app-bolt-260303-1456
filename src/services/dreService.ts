@@ -1,4 +1,6 @@
-import { supabase } from '@/lib/supabase';
+import { getDatabase } from '@/lib/databaseResolver';
+
+const supabase = getDatabase('RH');
 
 export interface DRELinha {
   categoria: string;

@@ -1,6 +1,5 @@
 import React from 'react';
 import ChamadosTab from './components/ChamadosTab';
-import { AdminSupabaseStatusFloating } from '@/components/AdminSupabaseStatusFloating';
 
 const TIApp: React.FC = () => {
   return (
@@ -8,8 +7,6 @@ const TIApp: React.FC = () => {
       <div className="p-4 sm:p-6">
         <ChamadosTab />
       </div>
-
-      <AdminSupabaseStatusFloating />
     </div>
   );
 };

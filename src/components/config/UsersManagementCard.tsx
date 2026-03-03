@@ -2,9 +2,11 @@ import { useState, useEffect } from 'react';
 import { Plus, Edit, Trash2, Key, Shield, User, ChevronDown, ChevronUp } from 'lucide-react';
 import { Button } from '../ui/button';
 import { Input } from '../ui/input';
-import { supabase } from '../../lib/supabase';
+import { getDatabase } from '../../lib/databaseResolver';
 import { useToast } from '../ui/use-toast';
 import { PermissionsMatrix, IndicatorPermission } from './PermissionsMatrix';
+
+const supabase = getDatabase('RH');
 
 interface AppUser {
   id: string;
@@ -22,6 +24,40 @@ interface UserFormData {
   name: string;
   is_admin: boolean;
 }
+
+const ensureMarketingDependencies = (next: IndicatorPermission[]) => {
+  const findLevel = (indicator_name: string): PermissionLevel => {
+    const perm = next.find((p) => p.page === 'marketing' && p.indicator_name === indicator_name);
+    return perm?.permission_level || 'none';
+  };
+
+  const hasAnyMarketing = next.some((p) => p.page === 'marketing' && p.permission_level !== 'none');
+  const hasRoot = next.some((p) => p.page === 'marketing' && p.indicator_name === 'Marketing');
+
+  const ensureView = (indicator_name: string) => {
+    if (findLevel(indicator_name) !== 'none') return;
+    next = [...next, { page: 'marketing', indicator_name, permission_level: 'view' as const }];
+  };
+
+  // Se qualquer linha de Marketing estiver marcada, garantir o item raiz.
+  if (hasAnyMarketing && !hasRoot) ensureView('Marketing');
+
+  // Pedir/Editar implicam acesso à sub-aba correspondente.
+  if (findLevel('Solicitações - Pedir') !== 'none' || findLevel('Solicitações - Editar') !== 'none') {
+    ensureView('Marketing > Solicitações');
+    ensureView('Marketing');
+  }
+  if (findLevel('Atas - Pedir') !== 'none' || findLevel('Atas - Editar') !== 'none') {
+    ensureView('Marketing > Atas');
+    ensureView('Marketing');
+  }
+  if (findLevel('Tarefas - Pedir') !== 'none' || findLevel('Tarefas - Editar') !== 'none') {
+    ensureView('Marketing > Tarefas');
+    ensureView('Marketing');
+  }
+
+  return next;
+};
 
 export function UsersManagementCard() {
   const { toast } = useToast();
@@ -359,7 +395,7 @@ export function UsersManagementCard() {
           </div>
           <PermissionsMatrix
             permissions={permissions}
-            onChange={setPermissions}
+            onChange={(next) => setPermissions(ensureMarketingDependencies(next))}
           />
         </div>
         <div className="px-6 py-4 bg-gray-50 border-t flex justify-end space-x-3">

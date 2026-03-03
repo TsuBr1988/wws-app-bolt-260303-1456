@@ -121,6 +121,20 @@ The codebase is a TypeScript/React-style application with strong **service-layer
 
 ## Common Workflows (Step-by-step)
 
+## 0) Hostinger deployment (runbook)
+**Goal:** publish the Vite SPA reliably and avoid common 403/SPA routing pitfalls.
+
+Use the repo runbook:
+- `docs/DEPLOY_HOSTINGER.md`
+
+Use the skill checklist:
+- `.context/skills/hostinger-deploy/SKILL.md`
+
+Quick rule of thumb for **403 Forbidden** (subdomains):
+- Verify the subdomain **Document root** points to a folder that actually contains `index.html` + `assets/`.
+- If `public_html/` has no `index.html` and directory listing is disabled, Hostinger will return **403**.
+- If you see `ws://localhost:8081/` or `@vite/client` in page source, the server is likely not serving the built `dist/` output.
+
 ## 1) Bootstrap a CI pipeline (baseline)
 **Goal:** every PR runs consistent checks and produces a build artifact.
 

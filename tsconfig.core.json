@@ -1,0 +1,16 @@
+{
+  "extends": "./tsconfig.app.json",
+  "include": [
+    "src/vite-env.d.ts",
+    "src/modules/financas/**/*",
+    "src/lib/**/*",
+    "src/services/**/*",
+    "src/types/**/*",
+    "src/hooks/**/*",
+    "src/components/ui/**/*"
+  ],
+  "exclude": [
+    "src/components/Comercialpublico2/**",
+    "src/components/Comercialprivado2/**"
+  ]
+}

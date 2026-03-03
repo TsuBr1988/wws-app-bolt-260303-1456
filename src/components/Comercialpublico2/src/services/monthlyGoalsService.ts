@@ -19,8 +19,8 @@ export const monthlyGoalsService = {
       
       try {
         // Verificar se supabase está configurado antes de fazer request
-        if (!import.meta.env.VITE_SUPABASE_URL || !import.meta.env.VITE_SUPABASE_ANON_KEY) {
-          throw new Error('❌ Supabase não configurado: verifique variáveis de ambiente VITE_SUPABASE_URL e VITE_SUPABASE_ANON_KEY no arquivo .env');
+        if (!import.meta.env.VITE_SUPABASE_COMERCIAL_PUBLICO_URL || !import.meta.env.VITE_SUPABASE_COMERCIAL_PUBLICO_ANON) {
+          throw new Error('❌ Supabase não configurado: verifique variáveis de ambiente VITE_SUPABASE_COMERCIAL_PUBLICO_URL e VITE_SUPABASE_COMERCIAL_PUBLICO_ANON no arquivo .env');
         }
         
         const { data, error } = await supabase
@@ -35,7 +35,7 @@ export const monthlyGoalsService = {
           
           // Verificar tipos específicos de erro do Supabase
           if (error.message?.includes('JWT') || error.message?.includes('auth')) {
-            throw new Error(`❌ Erro de autenticação: Verifique se VITE_SUPABASE_ANON_KEY está correto no .env`);
+            throw new Error(`❌ Erro de autenticação: Verifique se VITE_SUPABASE_COMERCIAL_PUBLICO_ANON está correto no .env`);
           } else if (error.message?.includes('not found') || error.message?.includes('table')) {
             throw new Error(`❌ Erro de schema: Tabela monthly_goals não encontrada - execute as migrações do banco`);
           } else {
@@ -72,13 +72,13 @@ export const monthlyGoalsService = {
         
         // Detectar diferentes tipos de erro de rede
         if (networkError.message?.includes('Failed to fetch')) {
-          throw new Error('❌ Falha ao conectar: Verifique se 1) arquivo .env existe 2) VITE_SUPABASE_URL está correto 3) internet está conectada');
+          throw new Error('❌ Falha ao conectar: Verifique se 1) arquivo .env existe 2) VITE_SUPABASE_COMERCIAL_PUBLICO_URL está correto 3) internet está conectada');
         } else if (networkError.message?.includes('NetworkError')) {
           throw new Error('❌ Erro de rede: Verifique sua conexão com a internet');
         } else if (networkError.message?.includes('CORS')) {
           throw new Error('❌ Erro de CORS: Verifique se o domínio está autorizado no Supabase');
         } else if (networkError.name === 'TypeError' && networkError.message?.includes('fetch')) {
-          throw new Error('❌ Erro de configuração: Verifique se VITE_SUPABASE_URL no .env está correto');
+          throw new Error('❌ Erro de configuração: Verifique se VITE_SUPABASE_COMERCIAL_PUBLICO_URL no .env está correto');
         }
         
         throw networkError;

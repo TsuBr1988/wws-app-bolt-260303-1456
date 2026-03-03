@@ -3,6 +3,14 @@ import { format, isValid, addMonths } from 'date-fns';
 import { BalancesByCompany, Company, FileType, Transaction, ClientMetadata } from './types';
 import * as XLSX from 'xlsx';
 
+const normalizeHeaderToken = (raw: unknown): string => {
+  return String(raw ?? '')
+    .trim()
+    .toLowerCase()
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '');
+};
+
 export const COMPANIES: Company[] = ['Worldwide Segurança', 'WWS Services', '2WS'];
 
 export const createEmptyBalances = (): BalancesByCompany => ({
@@ -132,6 +140,16 @@ export const formatCurrency = (value: number) => {
   }).format(value);
 };
 
+export const formatCurrencyNoSymbol = (value: number) => {
+  if (isNaN(value) || value === null || value === undefined) {
+    value = 0;
+  }
+  return new Intl.NumberFormat('pt-BR', {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  }).format(value);
+};
+
 export const parseMoneyToNumber = (raw: unknown): number | null => {
   const t0 = String(raw ?? '').trim();
   if (!t0) return null;
@@ -200,9 +218,9 @@ export const getValueColor = (val: number) => {
 };
 
 // Date Helpers
-const parseDateString = (dateVal: string): Date | null => {
+const parseDateString = (dateVal: string | null | undefined): Date | null => {
   if (!dateVal) return null;
-  const parts = dateVal.trim().split('/');
+  const parts = String(dateVal).trim().split('/');
   if (parts.length === 3) {
     return new Date(Number(parts[2]), Number(parts[1]) - 1, Number(parts[0]));
   }
@@ -257,51 +275,39 @@ export const getEffectiveDate = (t: Transaction) => {
 
 const isExcelFile = (filename: string): boolean => {
   const ext = filename.toLowerCase().split('.').pop();
-  return ext === 'xlsx' || ext === 'xlsm' || ext === 'xls' || ext === 'xxlsx';
+  // ExcelJS supports modern Office Open XML formats in the browser.
+  // Legacy .xls is not supported here.
+  return ext === 'xlsx' || ext === 'xlsm';
+};
+
+const readExcelFileWithSheetJs = (arrayBuffer: ArrayBuffer): string[][] => {
+  const workbook = XLSX.read(arrayBuffer, {
+    type: 'array',
+    cellDates: true,
+    raw: false,
+  });
+
+  const sheetName = workbook.SheetNames[0];
+  if (!sheetName) return [];
+
+  const sheet = workbook.Sheets[sheetName];
+  if (!sheet) return [];
+
+  const rows = XLSX.utils.sheet_to_json(sheet, {
+    header: 1,
+    raw: false,
+    defval: '',
+    blankrows: false,
+  }) as unknown[];
+
+  return rows.map((row) => (Array.isArray(row) ? row.map((cell) => String(cell ?? '')) : []));
 };
 
 const readExcelFile = (file: File): Promise<string[][]> => {
-  return new Promise((resolve, reject) => {
-    const reader = new FileReader();
-
-    reader.onload = (e) => {
-      try {
-        const data = e.target?.result;
-        if (!(data instanceof ArrayBuffer)) {
-          throw new Error('Falha ao ler arquivo Excel (buffer inválido).');
-        }
-
-        const workbook = XLSX.read(data, { type: 'array', cellDates: true });
-        const sheetName = workbook.SheetNames[0];
-        if (!sheetName) {
-          resolve([]);
-          return;
-        }
-
-        const worksheet = workbook.Sheets[sheetName];
-        const jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1 }) as any[][];
-
-        const processedData: string[][] = jsonData.map((row) => {
-          return row.map((cell: any) => {
-            if (cell instanceof Date) {
-              return format(cell, 'dd/MM/yyyy');
-            } else if (typeof cell === 'number') {
-              return cell.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-            } else {
-              return String(cell ?? '');
-            }
-          });
-        });
-
-        resolve(processedData);
-      } catch (err) {
-        reject(err);
-      }
-    };
-
-    reader.onerror = (err) => reject(err);
-    reader.readAsArrayBuffer(file);
-  });
+  return (async () => {
+    const arrayBuffer = await file.arrayBuffer();
+    return readExcelFileWithSheetJs(arrayBuffer);
+  })();
 };
 
 const readTextFile = (file: File): Promise<string[][]> => {
@@ -312,7 +318,15 @@ const readTextFile = (file: File): Promise<string[][]> => {
       try {
         const text = e.target?.result as string;
         const lines = text.split(/\r?\n/).filter(line => line.trim() !== '');
-        const rows = lines.map(line => line.split('\t'));
+
+        // Detect separator (TSV, ;, ,) from the first non-empty line.
+        const first = lines[0] ?? '';
+        const semicolons = (first.match(/;/g) || []).length;
+        const commas = (first.match(/,/g) || []).length;
+        const tabs = (first.match(/\t/g) || []).length;
+        const sep = tabs >= semicolons && tabs >= commas ? '\t' : (semicolons >= commas ? ';' : ',');
+
+        const rows = lines.map(line => line.split(sep));
         resolve(rows);
       } catch (err) {
         reject(err);
@@ -326,6 +340,12 @@ const readTextFile = (file: File): Promise<string[][]> => {
 
 export const parseFinanceFile = async (file: File, company: Company, slotType: FileType): Promise<Transaction[]> => {
   try {
+    const ext = file.name.toLowerCase().split('.').pop();
+    if (ext === 'xls') {
+      console.error(`Formato .xls não é suportado no navegador (${file.name}). Salve como .xlsx e tente novamente.`);
+      return [];
+    }
+
     const isExcel = isExcelFile(file.name);
     let rows: string[][] = [];
 
@@ -344,15 +364,49 @@ export const parseFinanceFile = async (file: File, company: Company, slotType: F
       return [];
     }
 
-    const headers = rows[0].map(h => String(h).trim().toLowerCase());
+    // Some exports include a title row, blank rows, or multiple header blocks.
+    // Scan the first ~30 rows to find the best candidate header row.
+    const headerScanLimit = Math.min(rows.length, 30);
+    const headerCandidates = Array.from({ length: headerScanLimit }, (_, idx) => {
+      const r = rows[idx] ?? [];
+      const normalized = r.map(normalizeHeaderToken);
 
-    const dueDateIdx = headers.findIndex((h) => h.includes('vencimento') || h.includes('vencto'));
-    const payDateIdx = headers.findIndex((h) => h.includes('pagamento') || h.includes('recebimento') || h.includes('baixa') || h.includes('liquidacao'));
-    const compDateIdx = headers.findIndex((h) => h.includes('competencia') || h.includes('comp'));
+      const nonEmpty = normalized.filter(Boolean).length;
+      const hasAmount = normalized.some(h => h.includes('valor') || h.includes('total') || h.includes('liquido') || h.includes('montante'));
+      const hasDate = normalized.some(h => h.includes('venc') || h.includes('pag') || h === 'data' || h.includes('emiss') || h.includes('compet'));
+      const hasDesc = normalized.some(h => h.includes('desc') || h.includes('hist') || h.includes('fornecedor') || h.includes('cliente') || h.includes('nome'));
 
-    const genericDateIdx = headers.findIndex((h) => h === 'data' || h.includes('emissão') || h.includes('dia'));
+      // Prefer rows that look like a header: multiple columns + key tokens.
+      const score = (hasAmount ? 5 : 0) + (hasDate ? 2 : 0) + (hasDesc ? 1 : 0) + Math.min(nonEmpty, 10) / 10;
+      return { idx, normalized, score, nonEmpty, hasAmount };
+    });
 
-    const amountIdx = headers.findIndex((h) => h.includes('valor') || h.includes('total') || h.includes('liquido') || h.includes('montante'));
+    const best = headerCandidates
+      .filter(c => c.nonEmpty >= 2)
+      .sort((a, b) => b.score - a.score)[0];
+
+    const headerRowIndex = best?.hasAmount ? best.idx : 0;
+    const headers = (rows[headerRowIndex] ?? []).map(normalizeHeaderToken);
+    console.log(`[Financas] Header detectado em ${file.name} (linha ${headerRowIndex + 1}):`, rows[headerRowIndex] ?? []);
+
+    const dueDateIdx = headers.findIndex((h) => h.includes('vencimento') || h.includes('vencto') || h.includes('venc'));
+    const payDateIdx = headers.findIndex((h) => h.includes('pagamento') || h.includes('recebimento') || h.includes('baixa') || h.includes('liquidacao') || h.includes('liquidac'));
+    const compDateIdx = headers.findIndex((h) => h.includes('competencia') || h.includes('compet') || h === 'comp');
+
+    const genericDateIdx = headers.findIndex((h) => h === 'data' || h.includes('emissao') || h.includes('emiss') || h.includes('dia'));
+
+    const amountIdx = headers.findIndex((h) => {
+      const compact = h.replace(/\s+/g, '');
+      return (
+        h.includes('valor') ||
+        h.includes('total') ||
+        h.includes('liquido') ||
+        h.includes('montante') ||
+        h.includes('vlr') ||
+        compact.includes('r$') ||
+        h.includes('$')
+      );
+    });
 
     let descIdx = headers.findIndex((h) => h.includes('desc') || h.includes('hist'));
     if (descIdx === -1) {
@@ -372,7 +426,7 @@ export const parseFinanceFile = async (file: File, company: Company, slotType: F
     const config = FILE_SLOTS_CONFIG.find(c => c.type === slotType)!;
     const baseTimestamp = Date.now();
 
-    for (let i = 1; i < rows.length; i++) {
+    for (let i = headerRowIndex + 1; i < rows.length; i++) {
       const row = rows[i];
 
       let rawDueDate = (dueDateIdx !== -1) ? row[dueDateIdx] : row[genericDateIdx];

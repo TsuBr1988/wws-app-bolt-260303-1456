@@ -26,7 +26,7 @@ interface YearlyChartData {
   gasto: number;
 }
 
-const CustomTooltip = ({ active, payload }: TooltipProps<number, string>) => {
+const CustomTooltip = ({ active, payload }: any) => {
   if (!active || !payload || payload.length === 0) return null;
 
   const data = payload[0].payload;
@@ -34,7 +34,7 @@ const CustomTooltip = ({ active, payload }: TooltipProps<number, string>) => {
   return (
     <div className="bg-white border border-gray-200 rounded-lg shadow-lg p-4 min-w-[200px]">
       <p className="text-sm font-semibold mb-2">{data.monthLabel || data.contract_name}</p>
-      {payload.map((entry, index) => (
+      {payload.map((entry: any, index: number) => (
         <p key={index} className="text-sm" style={{ color: entry.color }}>
           {entry.name}: R$ {Number(entry.value).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
         </p>

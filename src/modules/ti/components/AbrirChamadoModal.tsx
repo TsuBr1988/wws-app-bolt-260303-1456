@@ -1,8 +1,10 @@
 import React, { useState } from 'react';
 import { X, AlertCircle } from 'lucide-react';
-import { supabase } from '@/lib/supabase';
+import { getDatabase } from '@/lib/databaseResolver';
 import { useToast } from '@/components/ui/use-toast';
 import { CHAMADO_ESTIMATIVAS, CHAMADO_MODULOS, type ChamadoEstimativa } from '../chamadosConstants';
+
+const supabase = getDatabase('OPERACIONAL');
 
 interface AbrirChamadoModalProps {
   onClose: () => void;

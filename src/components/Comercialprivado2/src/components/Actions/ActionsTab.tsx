@@ -4,6 +4,7 @@ import { Action, actionsService, CreateAction } from '../../services/actionsServ
 import { ActionForm } from './ActionForm';
 import { ActionCard } from './ActionCard';
 import { ActionCommentsModal } from './ActionCommentsModal';
+import { useAuth } from '@/hooks/useAuth';
 
 interface ActionsTabProps {
   responsaveis: string[];
@@ -16,6 +17,7 @@ export const ActionsTab: React.FC<ActionsTabProps> = ({
   initialFormOpen = false,
   onActionCreated
 }) => {
+  const { user, hasIndicatorAccess, canEditIndicator } = useAuth();
   const [actions, setActions] = useState<Action[]>([]);
   const [loading, setLoading] = useState(true);
   const [isFormOpen, setIsFormOpen] = useState(initialFormOpen);
@@ -33,9 +35,18 @@ export const ActionsTab: React.FC<ActionsTabProps> = ({
 
   useEffect(() => {
     if (initialFormOpen) {
-      setIsFormOpen(true);
+      const canCreate = user?.is_admin
+        ? true
+        : hasIndicatorAccess('marketing', 'Tarefas - Pedir') || canEditIndicator('marketing', 'Tarefas - Pedir');
+      if (canCreate) setIsFormOpen(true);
     }
-  }, [initialFormOpen]);
+  }, [canEditIndicator, hasIndicatorAccess, initialFormOpen, user?.is_admin]);
+
+  const canCreate = user?.is_admin
+    ? true
+    : hasIndicatorAccess('marketing', 'Tarefas - Pedir') || canEditIndicator('marketing', 'Tarefas - Pedir');
+
+  const canEdit = user?.is_admin ? true : canEditIndicator('marketing', 'Tarefas - Editar');
 
   const loadActions = async () => {
     try {
@@ -57,6 +68,7 @@ export const ActionsTab: React.FC<ActionsTabProps> = ({
   };
 
   const handleCreateAction = async (action: CreateAction) => {
+    if (!canCreate) return;
     try {
       await actionsService.createAction(action);
       await loadActions();
@@ -71,6 +83,7 @@ export const ActionsTab: React.FC<ActionsTabProps> = ({
 
   const handleUpdateAction = async (action: CreateAction) => {
     if (!editingAction) return;
+    if (!canEdit) return;
 
     try {
       await actionsService.updateAction(editingAction.id, action);
@@ -83,6 +96,7 @@ export const ActionsTab: React.FC<ActionsTabProps> = ({
   };
 
   const handleStatusChange = async (id: string, newStatus: 'a_fazer' | 'fazendo' | 'feito') => {
+    if (!canEdit) return;
     try {
       await actionsService.updateAction(id, { status: newStatus });
       await loadActions();
@@ -92,6 +106,7 @@ export const ActionsTab: React.FC<ActionsTabProps> = ({
   };
 
   const handleDeleteAction = async (id: string) => {
+    if (!canEdit) return;
     if (!confirm('Tem certeza que deseja excluir esta ação?')) return;
 
     try {
@@ -108,6 +123,7 @@ export const ActionsTab: React.FC<ActionsTabProps> = ({
   };
 
   const handleEditAction = (action: Action) => {
+    if (!canEdit) return;
     setEditingAction(action);
     setIsFormOpen(true);
   };
@@ -153,13 +169,15 @@ export const ActionsTab: React.FC<ActionsTabProps> = ({
           <h2 className="text-2xl font-bold text-gray-900">Tarefas</h2>
           <p className="text-gray-600 mt-1">Gerencie seus planos de ação</p>
         </div>
-        <button
-          onClick={() => setIsFormOpen(true)}
-          className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
-        >
-          <Plus className="w-5 h-5" />
-          Nova Tarefa
-        </button>
+        {canCreate && (
+          <button
+            onClick={() => setIsFormOpen(true)}
+            className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+          >
+            <Plus className="w-5 h-5" />
+            Nova Tarefa
+          </button>
+        )}
       </div>
 
       <div className="grid grid-cols-3 gap-4">
@@ -256,6 +274,7 @@ export const ActionsTab: React.FC<ActionsTabProps> = ({
               onEdit={handleEditAction}
               onDelete={handleDeleteAction}
               onViewComments={handleViewComments}
+              canEdit={canEdit}
             />
           ))
         )}

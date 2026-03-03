@@ -123,10 +123,9 @@ const FilesTab: React.FC<FilesTabProps> = ({ onFinishProcessing, isConnected, su
                         const batch = dbRows.slice(i, i + batchSize);
 
                         try {
-                            const { error, count } = await supabaseClient
+                            const { error } = await supabaseClient
                                 .from('transactions')
-                                .insert(batch)
-                                .select('id', { count: 'exact', head: true });
+                                .insert(batch);
 
                             if (error) {
                                 console.error(`❌ Erro no batch ${Math.floor(i / batchSize) + 1}:`, error);

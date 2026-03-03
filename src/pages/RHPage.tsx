@@ -63,18 +63,6 @@ const RHSidebar = ({ activeTab, setActiveTab, hasAccess }: {
           );
         })}
       </nav>
-
-      <div className="p-3">
-        <div className="bg-brand-graphite rounded-xl p-3 border border-gray-700 shadow-lg">
-          <div className="flex items-center gap-2 mb-1.5">
-            <div className="w-1.5 h-1.5 rounded-full bg-ambiental animate-pulse" />
-            <span className="text-[10px] font-bold text-gray-300">Sistema Online</span>
-          </div>
-          <p className="text-[9px] text-gray-400 leading-relaxed">
-            Indicadores de pessoal e equipe.
-          </p>
-        </div>
-      </div>
     </div>
   );
 };

@@ -1,7 +1,7 @@
 import React from 'react';
 import { ArrowLeft, X, Calendar, Plus, History, Ban, Printer } from 'lucide-react';
 import { format } from 'date-fns';
-import ptBR from 'date-fns/locale/pt-BR';
+import { ptBR } from 'date-fns/locale/pt-BR';
 import { ContractSheet } from '../../../types';
 import { formatCurrency } from '../../../utils';
 

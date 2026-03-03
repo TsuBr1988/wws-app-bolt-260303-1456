@@ -1,10 +1,12 @@
 import { useState, useEffect } from 'react';
-import { supabase } from '@/lib/supabase';
+import { getDatabase } from '@/lib/databaseResolver';
 import { useToast } from '@/components/ui/use-toast';
 import { Button } from '@/components/ui/button';
 import { Upload, Save, Image as ImageIcon, Maximize2 } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import ImageViewerModal from './ImageViewerModal';
+
+const supabase = getDatabase('CULTURA');
 
 interface StrategicPlan {
   id: string;

@@ -1,9 +1,10 @@
 
 import React, { useState, useEffect, useMemo } from 'react';
-import { createClient, SupabaseClient } from '@supabase/supabase-js';
+import { SupabaseClient } from '@supabase/supabase-js';
 import { format, getMonth, getYear, isBefore, addMonths, endOfMonth, isSameDay, compareAsc, eachMonthOfInterval, differenceInCalendarMonths } from 'date-fns';
-import ptBR from 'date-fns/locale/pt-BR';
+import { ptBR } from 'date-fns/locale/pt-BR';
 import { useAuth } from '../../hooks/useAuth';
+import { getDatabase } from '../../lib/databaseResolver';
 
 // Types and Utils
 import { BalancesByCompany, Company, ViewState, CoaViewMode, CashSubView, Transaction, MonthlyValues, CoaNode, ClientMetadata, ClientCategoryFilter, ClientStatusFilter, ClientTypeFilter, ContractSheet, ContractSheetItem } from './types';
@@ -110,35 +111,19 @@ const App = () => {
     const [sheetsLoading, setSheetsLoading] = useState(false);
 
     // Supabase
-    const [supabaseUrl, setSupabaseUrl] = useState(() => localStorage.getItem('supabaseUrl') || import.meta.env.VITE_FINANCAS_SUPABASE_URL || 'https://mbekexdrskgosdzluyis.supabase.co');
-    const [supabaseKey, setSupabaseKey] = useState(() => localStorage.getItem('supabaseKey') || import.meta.env.VITE_FINANCAS_SUPABASE_ANON_KEY || '');
+    const [supabaseUrl, setSupabaseUrl] = useState(() => import.meta.env.VITE_SUPABASE_FINANCAS_URL || '');
+    const [supabaseKey, setSupabaseKey] = useState(() => import.meta.env.VITE_SUPABASE_FINANCAS_ANON || '');
     const [supabaseClient, setSupabaseClient] = useState<SupabaseClient | null>(null);
     const [isConnected, setIsConnected] = useState(false);
     const [dbLoading, setDbLoading] = useState(false);
+    const financasDb = useMemo(() => getDatabase('FINANCAS') as SupabaseClient, []);
 
     // --- Effects & Data Loading ---
-
-    type GlobalFinancasSupabaseCache = {
-        __wwsFinancasSupabaseClients?: Record<string, { key: string; client: SupabaseClient }>;
-    };
-
-    const getFinancasSupabaseClient = (url: string, key: string): SupabaseClient => {
-        const globalCache = globalThis as unknown as GlobalFinancasSupabaseCache;
-        const cacheKey = `financas:${url}`;
-
-        const cached = globalCache.__wwsFinancasSupabaseClients?.[cacheKey];
-        if (cached && cached.key === key) return cached.client;
-
-        const client = createClient(url, key);
-        if (!globalCache.__wwsFinancasSupabaseClients) globalCache.__wwsFinancasSupabaseClients = {};
-        globalCache.__wwsFinancasSupabaseClients[cacheKey] = { key, client };
-        return client;
-    };
 
     useEffect(() => {
         if (supabaseUrl && supabaseKey) {
             try {
-                const client = getFinancasSupabaseClient(supabaseUrl, supabaseKey);
+                const client = financasDb;
                 setSupabaseClient(client);
                 setIsConnected(true);
                 fetchFromSupabase(client);
@@ -147,17 +132,20 @@ const App = () => {
                 setIsConnected(false);
             }
         }
-    }, []);
+    }, [financasDb, supabaseKey, supabaseUrl]);
 
     const saveSupabaseConfig = () => {
-        localStorage.setItem('supabaseUrl', supabaseUrl);
-        localStorage.setItem('supabaseKey', supabaseKey);
         try {
-            const client = getFinancasSupabaseClient(supabaseUrl, supabaseKey);
+            const fixedUrl = import.meta.env.VITE_SUPABASE_FINANCAS_URL || '';
+            const fixedKey = import.meta.env.VITE_SUPABASE_FINANCAS_ANON || '';
+            setSupabaseUrl(fixedUrl);
+            setSupabaseKey(fixedKey);
+
+            const client = financasDb;
             setSupabaseClient(client);
             setIsConnected(true);
             fetchFromSupabase(client);
-            alert("Configurações salvas e conexão iniciada!");
+            alert("Conexão validada no banco de Finanças.");
         } catch (e) {
             alert("Erro ao conectar. Verifique as credenciais.");
         }

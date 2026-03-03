@@ -18,6 +18,8 @@ import { useMonthlyGoals } from '../../hooks/useMonthlyGoals';
 // Constante para status de propostas ativas
 const ACTIVE_PROPOSAL_STATUSES = ['SQL', 'Proposta', 'Negociação', 'Análise de contrato'] as const;
 
+const EMPRESA_OPTIONS = ['WWS', 'Worldwide', '2WS'] as const;
+
 interface ProposalsProps {
   onDataChange?: () => void;
 }
@@ -30,7 +32,9 @@ export const Proposals: React.FC<ProposalsProps> = memo(({ onDataChange }) => {
 
   // Otimizar query com campos específicos
   const { data: proposalsData = [], loading, refetch } = useSupabaseQuery('proposals', {
-    select: 'id, client, monthly_value, months, total_value, status, commission, commission_rate, closer_id, sdr_id, margem_percentual, cidade, closing_date, lost_date, lost_reason, created_at, updated_at',
+    // Usar '*' para evitar quebrar a listagem se alguma coluna não existir neste projeto
+    // (ex: coluna 'empresa' pode não existir em todos os ambientes)
+    select: '*',
     orderBy: { column: 'created_at', ascending: false }
   });
 
@@ -42,6 +46,7 @@ export const Proposals: React.FC<ProposalsProps> = memo(({ onDataChange }) => {
   // Transform database data to match our Proposal interface
   const proposals: Proposal[] = useMemo(() => proposalsData.map(p => ({
     id: p.id,
+    empresa: (p as any).empresa || undefined,
     client: p.client,
     monthlyValue: p.monthly_value,
     months: p.months,
@@ -53,6 +58,7 @@ export const Proposals: React.FC<ProposalsProps> = memo(({ onDataChange }) => {
     sdrId: p.sdr_id || undefined,
     margemPercentual: p.margem_percentual || undefined,
     cidade: p.cidade || undefined,
+    familia: p.familia || undefined,
     closingDate: p.closing_date || undefined,
     lostDate: p.lost_date || undefined,
     lostReason: p.lost_reason || undefined,
@@ -92,6 +98,7 @@ export const Proposals: React.FC<ProposalsProps> = memo(({ onDataChange }) => {
   }), [proposalsData, probabilityData, selectedYear]);
 
   const [filter, setFilter] = useState('all');
+  const [empresaFilter, setEmpresaFilter] = useState<'all' | string>('all');
   const [selectedMonths, setSelectedMonths] = useState<string[]>(['all']);
   const [showMonthDropdown, setShowMonthDropdown] = useState(false);
   const [showForm, setShowForm] = useState(false);
@@ -104,6 +111,105 @@ export const Proposals: React.FC<ProposalsProps> = memo(({ onDataChange }) => {
   });
   const [selectedProposal, setSelectedProposal] = useState<Proposal | null>(null);
   const [showResumoModal, setShowResumoModal] = useState(false);
+
+  // Filtros do modal de Resumo das Propostas
+  const [resumoEmpresa, setResumoEmpresa] = useState<'all' | string>('all');
+  const [resumoDataInicial, setResumoDataInicial] = useState<string>('');
+  const [resumoDataFinal, setResumoDataFinal] = useState<string>('');
+  const [resumoStatus, setResumoStatus] = useState<'all' | string>('all');
+  const [resumoProbabilidade, setResumoProbabilidade] = useState<'all' | 'nao_avaliada' | 'baixa' | 'media' | 'alta'>('all');
+  const [resumoValorMin, setResumoValorMin] = useState<string>('');
+  const [resumoValorMax, setResumoValorMax] = useState<string>('');
+  const [resumoMargemMin, setResumoMargemMin] = useState<string>('');
+  const [resumoMargemMax, setResumoMargemMax] = useState<string>('');
+  const [resumoCidade, setResumoCidade] = useState<'all' | string>('all');
+
+  const getProbabilityKey = useCallback((proposal: Proposal) => {
+    const totalScore = proposal.probabilityScores
+      ? (
+          proposal.probabilityScores.economicBuyer +
+          proposal.probabilityScores.metrics +
+          proposal.probabilityScores.decisionCriteria +
+          proposal.probabilityScores.decisionProcess +
+          proposal.probabilityScores.identifyPain +
+          proposal.probabilityScores.champion +
+          proposal.probabilityScores.competition +
+          proposal.probabilityScores.engagement
+        )
+      : 0;
+
+    if (totalScore <= 0) return 'nao_avaliada' as const;
+    if (totalScore < 12) return 'baixa' as const;
+    if (totalScore <= 18) return 'media' as const;
+    return 'alta' as const;
+  }, []);
+
+  const resumoEmpresasDisponiveis = useMemo(() => {
+    return [...EMPRESA_OPTIONS];
+  }, []);
+
+  const resumoCidadesDisponiveis = useMemo(() => {
+    const cidades = new Set<string>();
+    proposals.forEach(p => {
+      if (p.cidade) cidades.add(String(p.cidade));
+    });
+    return Array.from(cidades).sort((a, b) => a.localeCompare(b, 'pt-BR'));
+  }, [proposals]);
+
+  const resumoPropostasFiltradas = useMemo(() => {
+    const base = proposals.filter(p => ACTIVE_PROPOSAL_STATUSES.includes(p.status as any));
+
+    const valorMin = resumoValorMin.trim() === '' ? null : Number(resumoValorMin);
+    const valorMax = resumoValorMax.trim() === '' ? null : Number(resumoValorMax);
+    const margemMin = resumoMargemMin.trim() === '' ? null : Number(resumoMargemMin);
+    const margemMax = resumoMargemMax.trim() === '' ? null : Number(resumoMargemMax);
+
+    const dataInicial = resumoDataInicial ? new Date(`${resumoDataInicial}T00:00:00.000`) : null;
+    const dataFinal = resumoDataFinal ? new Date(`${resumoDataFinal}T23:59:59.999`) : null;
+
+    return base
+      .filter(p => {
+        if (resumoEmpresa !== 'all' && (p.empresa || '') !== resumoEmpresa) return false;
+        if (resumoStatus !== 'all' && p.status !== resumoStatus) return false;
+        if (resumoCidade !== 'all' && (p.cidade || '') !== resumoCidade) return false;
+
+        if (dataInicial || dataFinal) {
+          const created = new Date(p.createdAt);
+          if (dataInicial && created < dataInicial) return false;
+          if (dataFinal && created > dataFinal) return false;
+        }
+
+        if (resumoProbabilidade !== 'all') {
+          const key = getProbabilityKey(p);
+          if (key !== resumoProbabilidade) return false;
+        }
+
+        if (valorMin !== null && !Number.isNaN(valorMin) && p.monthlyValue < valorMin) return false;
+        if (valorMax !== null && !Number.isNaN(valorMax) && p.monthlyValue > valorMax) return false;
+
+        if (margemMin !== null || margemMax !== null) {
+          if (p.margemPercentual === undefined || p.margemPercentual === null) return false;
+          if (margemMin !== null && !Number.isNaN(margemMin) && p.margemPercentual < margemMin) return false;
+          if (margemMax !== null && !Number.isNaN(margemMax) && p.margemPercentual > margemMax) return false;
+        }
+
+        return true;
+      })
+      .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+  }, [
+    proposals,
+    resumoEmpresa,
+    resumoStatus,
+    resumoCidade,
+    resumoDataInicial,
+    resumoDataFinal,
+    resumoProbabilidade,
+    resumoValorMin,
+    resumoValorMax,
+    resumoMargemMin,
+    resumoMargemMax,
+    getProbabilityKey,
+  ]);
 
   // Persist viewMode to localStorage
   useEffect(() => {
@@ -164,6 +270,9 @@ export const Proposals: React.FC<ProposalsProps> = memo(({ onDataChange }) => {
     let filtered = proposals.filter(proposal => {
       // Filter by status
       const statusMatch = filter === 'all' || proposal.status === filter;
+
+      // Filter by empresa
+      const empresaMatch = empresaFilter === 'all' || (proposal.empresa || '') === empresaFilter;
       
       // Filter by search term (client name - partial match, case insensitive)
       const searchMatch = searchTerm === '' || 
@@ -171,14 +280,14 @@ export const Proposals: React.FC<ProposalsProps> = memo(({ onDataChange }) => {
       
       // Filter by month
       if (selectedMonths.includes('all') || selectedMonths.length === 0) {
-        return statusMatch && searchMatch;
+        return statusMatch && empresaMatch && searchMatch;
       }
       
       const proposalDate = new Date(proposal.createdAt);
       const proposalMonthKey = `${proposalDate.getFullYear()}-${String(proposalDate.getMonth() + 1).padStart(2, '0')}`;
       const monthMatch = selectedMonths.includes(proposalMonthKey);
       
-      return statusMatch && searchMatch && monthMatch;
+      return statusMatch && empresaMatch && searchMatch && monthMatch;
     });
     
     // Sort proposals
@@ -222,7 +331,7 @@ export const Proposals: React.FC<ProposalsProps> = memo(({ onDataChange }) => {
         return aValue < bValue ? 1 : aValue > bValue ? -1 : 0;
       }
     });
-  }, [proposals, filter, searchTerm, selectedMonths, sortBy, sortOrder]);
+  }, [proposals, filter, empresaFilter, searchTerm, selectedMonths, sortBy, sortOrder]);
 
   // Função para calcular meta efetiva de um mês considerando carry-over
   const calculateEffectiveMonthGoal = useCallback((month: number, year: number): number => {
@@ -352,6 +461,7 @@ export const Proposals: React.FC<ProposalsProps> = memo(({ onDataChange }) => {
         const proposalDate = new Date(newProposal.proposalDate).toISOString();
         
         const proposalData = {
+          empresa: (newProposal as any).empresa || null,
           client: newProposal.client,
           monthly_value: newProposal.monthlyValue,
           months: newProposal.months,
@@ -361,6 +471,7 @@ export const Proposals: React.FC<ProposalsProps> = memo(({ onDataChange }) => {
           commission_rate: newProposal.commissionRate,
           closer_id: newProposal.closerId,
           sdr_id: newProposal.sdrId || null,
+          familia: newProposal.familia || null,
           closing_date: newProposal.closingDate || null,
           lost_date: newProposal.lostDate || null,
           lost_reason: newProposal.lostReason || null,
@@ -370,19 +481,35 @@ export const Proposals: React.FC<ProposalsProps> = memo(({ onDataChange }) => {
 
         console.log('Dados sendo inseridos no Supabase:', proposalData);
 
-        const { data, error } = await supabase
+        let insertResult = await supabase
           .from('proposals')
-          .insert(proposalData)
+          .insert(proposalData as any)
           .select()
           .single();
 
-        if (error) {
-          console.error('Error inserting proposal:', error);
-          alert(`Erro ao criar proposta: ${error.message}`);
+        if (insertResult.error) {
+          const msg = String(insertResult.error.message || '');
+          const isEmpresaColumnMissing =
+            msg.toLowerCase().includes('empresa') &&
+            (msg.toLowerCase().includes('schema cache') || msg.toLowerCase().includes('does not exist'));
+
+          if (isEmpresaColumnMissing) {
+            const { empresa: _empresa, ...proposalDataWithoutEmpresa } = proposalData as any;
+            insertResult = await supabase
+              .from('proposals')
+              .insert(proposalDataWithoutEmpresa)
+              .select()
+              .single();
+          }
+        }
+
+        if (insertResult.error) {
+          console.error('Error inserting proposal:', insertResult.error);
+          alert(`Erro ao criar proposta: ${insertResult.error.message}`);
           return;
         }
 
-        console.log('Proposal created successfully:', data);
+        console.log('Proposal created successfully:', insertResult.data);
         
         // Refresh the data
         await refetch();
@@ -483,6 +610,7 @@ export const Proposals: React.FC<ProposalsProps> = memo(({ onDataChange }) => {
         console.log('Updating proposal:', updatedProposal.id, 'with data:', updatedProposal);
         
         const proposalData = {
+          empresa: updatedProposal.empresa || null,
           client: updatedProposal.client,
           monthly_value: updatedProposal.monthlyValue,
           months: updatedProposal.months,
@@ -492,6 +620,7 @@ export const Proposals: React.FC<ProposalsProps> = memo(({ onDataChange }) => {
           commission_rate: updatedProposal.commissionRate,
           closer_id: updatedProposal.closerId,
           sdr_id: updatedProposal.sdrId || null,
+          familia: updatedProposal.familia || null,
           closing_date: updatedProposal.closingDate || null,
           lost_date: updatedProposal.lostDate || null,
           lost_reason: updatedProposal.lostReason || null,
@@ -500,20 +629,37 @@ export const Proposals: React.FC<ProposalsProps> = memo(({ onDataChange }) => {
 
         console.log('Sending to Supabase:', proposalData);
         
-        const { data, error } = await supabase
+        let updateResult = await supabase
           .from('proposals')
-          .update(proposalData)
+          .update(proposalData as any)
           .eq('id', updatedProposal.id)
           .select()
           .single();
 
-        if (error) {
-          console.error('Supabase update error:', error);
-          alert(`Erro ao atualizar proposta: ${error.message}`);
+        if (updateResult.error) {
+          const msg = String(updateResult.error.message || '');
+          const isEmpresaColumnMissing =
+            msg.toLowerCase().includes('empresa') &&
+            (msg.toLowerCase().includes('schema cache') || msg.toLowerCase().includes('does not exist'));
+
+          if (isEmpresaColumnMissing) {
+            const { empresa: _empresa, ...proposalDataWithoutEmpresa } = proposalData as any;
+            updateResult = await supabase
+              .from('proposals')
+              .update(proposalDataWithoutEmpresa)
+              .eq('id', updatedProposal.id)
+              .select()
+              .single();
+          }
+        }
+
+        if (updateResult.error) {
+          console.error('Supabase update error:', updateResult.error);
+          alert(`Erro ao atualizar proposta: ${updateResult.error.message}`);
           return;
         }
         
-        console.log('Update successful:', data);
+        console.log('Update successful:', updateResult.data);
         
         // Clear cache to force refresh
         clearQueryCache('proposals');
@@ -789,6 +935,23 @@ export const Proposals: React.FC<ProposalsProps> = memo(({ onDataChange }) => {
 
           <div className="h-6 w-px bg-gray-300"></div>
 
+          {/* Empresa Filter */}
+          <div className="flex items-center gap-2">
+            <span className="text-xs text-gray-500">Empresa</span>
+            <select
+              value={empresaFilter}
+              onChange={(e) => setEmpresaFilter(e.target.value)}
+              className="px-2 py-1.5 border border-gray-300 rounded-lg text-xs focus:outline-none focus:ring-1 focus:ring-green-500"
+            >
+              <option value="all">Todas</option>
+              {EMPRESA_OPTIONS.map(opt => (
+                <option key={opt} value={opt}>{opt}</option>
+              ))}
+            </select>
+          </div>
+
+          <div className="h-6 w-px bg-gray-300"></div>
+
           {/* Month Filter */}
           <div className="relative flex items-center gap-2">
             <Calendar className="w-3.5 h-3.5 text-gray-500" />
@@ -962,6 +1125,144 @@ export const Proposals: React.FC<ProposalsProps> = memo(({ onDataChange }) => {
 
             {/* Content */}
             <div className="flex-1 overflow-auto p-4">
+              {/* Filtros */}
+              <div className="mb-4 p-3 bg-gray-50 border border-gray-200 rounded-lg">
+                <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
+                  <div>
+                    <label className="block text-[11px] font-semibold text-gray-700 mb-1">Empresa</label>
+                    <select
+                      value={resumoEmpresa}
+                      onChange={(e) => setResumoEmpresa(e.target.value)}
+                      className="w-full px-2 py-1.5 border border-gray-300 rounded-lg text-xs focus:outline-none focus:ring-1 focus:ring-blue-500 bg-white"
+                    >
+                      <option value="all">Todas</option>
+                      {resumoEmpresasDisponiveis.map(emp => (
+                        <option key={emp} value={emp}>{emp}</option>
+                      ))}
+                    </select>
+                  </div>
+
+                  <div>
+                    <label className="block text-[11px] font-semibold text-gray-700 mb-1">Data Inclusão (inicial)</label>
+                    <input
+                      type="date"
+                      value={resumoDataInicial}
+                      onChange={(e) => setResumoDataInicial(e.target.value)}
+                      className="w-full px-2 py-1.5 border border-gray-300 rounded-lg text-xs focus:outline-none focus:ring-1 focus:ring-blue-500 bg-white"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-[11px] font-semibold text-gray-700 mb-1">Data Inclusão (final)</label>
+                    <input
+                      type="date"
+                      value={resumoDataFinal}
+                      onChange={(e) => setResumoDataFinal(e.target.value)}
+                      className="w-full px-2 py-1.5 border border-gray-300 rounded-lg text-xs focus:outline-none focus:ring-1 focus:ring-blue-500 bg-white"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-[11px] font-semibold text-gray-700 mb-1">Status</label>
+                    <select
+                      value={resumoStatus}
+                      onChange={(e) => setResumoStatus(e.target.value)}
+                      className="w-full px-2 py-1.5 border border-gray-300 rounded-lg text-xs focus:outline-none focus:ring-1 focus:ring-blue-500 bg-white"
+                    >
+                      <option value="all">Todos</option>
+                      {ACTIVE_PROPOSAL_STATUSES.map(s => (
+                        <option key={s} value={s}>{s}</option>
+                      ))}
+                    </select>
+                  </div>
+
+                  <div>
+                    <label className="block text-[11px] font-semibold text-gray-700 mb-1">Probabilidade</label>
+                    <select
+                      value={resumoProbabilidade}
+                      onChange={(e) => setResumoProbabilidade(e.target.value as any)}
+                      className="w-full px-2 py-1.5 border border-gray-300 rounded-lg text-xs focus:outline-none focus:ring-1 focus:ring-blue-500 bg-white"
+                    >
+                      <option value="all">Todas</option>
+                      <option value="nao_avaliada">Não avaliada</option>
+                      <option value="baixa">Baixa</option>
+                      <option value="media">Média</option>
+                      <option value="alta">Alta</option>
+                    </select>
+                  </div>
+
+                  <div>
+                    <label className="block text-[11px] font-semibold text-gray-700 mb-1">Valor mensal (de)</label>
+                    <input
+                      type="number"
+                      inputMode="decimal"
+                      step="0.01"
+                      value={resumoValorMin}
+                      onChange={(e) => setResumoValorMin(e.target.value)}
+                      placeholder="0,00"
+                      className="w-full px-2 py-1.5 border border-gray-300 rounded-lg text-xs focus:outline-none focus:ring-1 focus:ring-blue-500 bg-white"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-[11px] font-semibold text-gray-700 mb-1">Valor mensal (até)</label>
+                    <input
+                      type="number"
+                      inputMode="decimal"
+                      step="0.01"
+                      value={resumoValorMax}
+                      onChange={(e) => setResumoValorMax(e.target.value)}
+                      placeholder="0,00"
+                      className="w-full px-2 py-1.5 border border-gray-300 rounded-lg text-xs focus:outline-none focus:ring-1 focus:ring-blue-500 bg-white"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-[11px] font-semibold text-gray-700 mb-1">Margem (de)</label>
+                    <input
+                      type="number"
+                      inputMode="decimal"
+                      step="0.01"
+                      value={resumoMargemMin}
+                      onChange={(e) => setResumoMargemMin(e.target.value)}
+                      placeholder="0"
+                      className="w-full px-2 py-1.5 border border-gray-300 rounded-lg text-xs focus:outline-none focus:ring-1 focus:ring-blue-500 bg-white"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-[11px] font-semibold text-gray-700 mb-1">Margem (até)</label>
+                    <input
+                      type="number"
+                      inputMode="decimal"
+                      step="0.01"
+                      value={resumoMargemMax}
+                      onChange={(e) => setResumoMargemMax(e.target.value)}
+                      placeholder="0"
+                      className="w-full px-2 py-1.5 border border-gray-300 rounded-lg text-xs focus:outline-none focus:ring-1 focus:ring-blue-500 bg-white"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-[11px] font-semibold text-gray-700 mb-1">Cidade</label>
+                    <select
+                      value={resumoCidade}
+                      onChange={(e) => setResumoCidade(e.target.value)}
+                      className="w-full px-2 py-1.5 border border-gray-300 rounded-lg text-xs focus:outline-none focus:ring-1 focus:ring-blue-500 bg-white"
+                    >
+                      <option value="all">Todas</option>
+                      {resumoCidadesDisponiveis.map(c => (
+                        <option key={c} value={c}>{c}</option>
+                      ))}
+                    </select>
+                  </div>
+                </div>
+
+                <div className="mt-2 text-[11px] text-gray-500">
+                  Mostrando <strong>{resumoPropostasFiltradas.length}</strong> propostas ativas após filtros
+                </div>
+              </div>
+
               <div className="overflow-x-auto">
                 <table className="w-full text-xs">
                   <thead>
@@ -976,10 +1277,7 @@ export const Proposals: React.FC<ProposalsProps> = memo(({ onDataChange }) => {
                     </tr>
                   </thead>
                   <tbody>
-                    {proposals
-                      .filter(p => ACTIVE_PROPOSAL_STATUSES.includes(p.status as any))
-                      .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
-                      .map((proposal, index) => {
+                    {resumoPropostasFiltradas.map((proposal, index) => {
                         // Calcular o score total (soma dos 8 scores)
                         const totalScore = proposal.probabilityScores
                           ? (
@@ -1049,10 +1347,10 @@ export const Proposals: React.FC<ProposalsProps> = memo(({ onDataChange }) => {
                   </tbody>
                 </table>
 
-                {proposals.filter(p => ACTIVE_PROPOSAL_STATUSES.includes(p.status as any)).length === 0 && (
+                {resumoPropostasFiltradas.length === 0 && (
                   <div className="text-center py-8 text-gray-500">
                     <FileText className="w-12 h-12 mx-auto mb-3 text-gray-300" />
-                    <p>Nenhuma proposta ativa no momento</p>
+                    <p>Nenhuma proposta encontrada com os filtros aplicados</p>
                   </div>
                 )}
               </div>
@@ -1062,11 +1360,11 @@ export const Proposals: React.FC<ProposalsProps> = memo(({ onDataChange }) => {
             <div className="p-4 border-t border-gray-200 bg-gray-50">
               <div className="flex items-center justify-between text-sm">
                 <span className="text-gray-600">
-                  Total: <strong>{proposals.filter(p => ACTIVE_PROPOSAL_STATUSES.includes(p.status as any)).length}</strong> propostas ativas
+                  Total: <strong>{resumoPropostasFiltradas.length}</strong> propostas ativas
                 </span>
                 <span className="text-gray-600">
                   Valor total: <strong className="text-blue-600">
-                    {formatCurrency(proposals.filter(p => ACTIVE_PROPOSAL_STATUSES.includes(p.status as any)).reduce((sum, p) => sum + p.monthlyValue, 0))}
+                    {formatCurrency(resumoPropostasFiltradas.reduce((sum, p) => sum + p.monthlyValue, 0))}
                   </strong>/mês
                 </span>
               </div>

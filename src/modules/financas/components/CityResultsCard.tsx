@@ -196,7 +196,7 @@ const CityResultsCard: React.FC<CityResultsCardProps> = ({
                                         ))}
                                     </Pie>
                                     <Tooltip
-                                        formatter={(value: number) => formatCurrency(value)}
+                                        formatter={(value) => formatCurrency(Number(value ?? 0))}
                                         contentStyle={{
                                             borderRadius: '12px',
                                             border: 'none',

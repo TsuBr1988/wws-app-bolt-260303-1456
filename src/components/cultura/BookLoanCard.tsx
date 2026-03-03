@@ -1,10 +1,12 @@
 import { useState } from 'react';
 import { createPortal } from 'react-dom';
 import { User, BookOpen, Calendar, Clock, FileText, TrendingUp, Check, Pen, X } from 'lucide-react';
-import { supabase } from '../../lib/supabase';
+import { getDatabase } from '../../lib/databaseResolver';
 import { Button } from '../ui/button';
 import { Input } from '../ui/input';
 import { useToast } from '../ui/use-toast';
+
+const supabase = getDatabase('CULTURA');
 
 interface BookLoan {
   id: string;

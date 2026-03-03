@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { X, Printer } from 'lucide-react';
 import { format } from 'date-fns';
-import ptBR from 'date-fns/locale/pt-BR';
+import { ptBR } from 'date-fns/locale/pt-BR';
 import { ContractSheet, ContractSheetItem } from '../../../types';
 import { formatCurrency } from '../../../utils';
 import { SupabaseClient } from '@supabase/supabase-js';

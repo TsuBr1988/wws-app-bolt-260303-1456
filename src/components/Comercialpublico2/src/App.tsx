@@ -179,7 +179,7 @@ function App() {
       case 'notificacoes':
         return <Notificacoes key={`notificacoes-${refreshKey}`} />;
       case 'contracts':
-        return <ContractsPage key={`contracts-${refreshKey}`} />;
+        return <ContractsPage key={`contracts-${refreshKey}`} modulo="COMERCIAL_PUBLICO" />;
       case 'commissions':
         return <Commissions key={`commissions-${refreshKey}`} />;
       case 'bonus-fund':

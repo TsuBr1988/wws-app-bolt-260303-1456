@@ -57,6 +57,8 @@ export const SheetAddendumForm: React.FC<SheetAddendumFormProps> = ({
     const [addedCategories, setAddedCategories] = useState<Category[]>([]);
     const [selectedCategory, setSelectedCategory] = useState('');
 
+    const sheetItems = sheet.items ?? [];
+
     // Função auxiliar para coletar todas as categorias folha (leaf nodes) da árvore
     const collectLeafNodes = (nodes: CoaNode[]): Category[] => {
         const leaves: Category[] = [];
@@ -241,7 +243,7 @@ export const SheetAddendumForm: React.FC<SheetAddendumFormProps> = ({
         }
 
         const newAmounts: Record<string, number> = {};
-        sheet.items.forEach(item => {
+        sheetItems.forEach(item => {
             const original = initialAmounts[item.category_code] || 0;
             const newValue = original * (1 + percentage / 100);
             newAmounts[item.category_code] = Math.round(newValue * 100) / 100;
@@ -303,7 +305,7 @@ export const SheetAddendumForm: React.FC<SheetAddendumFormProps> = ({
                 }
 
                 // Itens existentes da ficha original
-                const existingItems = sheet.items.map(item => ({
+                const existingItems = sheetItems.map(item => ({
                     addendum_id: existingAddendum.id,
                     category_code: item.category_code,
                     category_name: item.category_name,
@@ -379,7 +381,7 @@ export const SheetAddendumForm: React.FC<SheetAddendumFormProps> = ({
                 console.log('Aditivo criado:', addendum);
 
                 // Itens existentes da ficha original
-                const existingItems = sheet.items.map(item => ({
+                const existingItems = sheetItems.map(item => ({
                     addendum_id: addendum.id,
                     category_code: item.category_code,
                     category_name: item.category_name,
@@ -458,13 +460,13 @@ export const SheetAddendumForm: React.FC<SheetAddendumFormProps> = ({
     };
 
     const totalBudgeted = useMemo(() => {
-        const existingTotal = sheet.items.reduce((sum, item) => sum + getBudgetedAmount(item.category_code), 0);
+        const existingTotal = sheetItems.reduce((sum, item) => sum + getBudgetedAmount(item.category_code), 0);
         const addedTotal = addedCategories.reduce((sum, cat) => sum + getBudgetedAmount(cat.code), 0);
         return existingTotal + addedTotal;
     }, [budgetedAmounts, sheet.items, addedCategories]);
 
     const totalChange = useMemo(() => {
-        const existingChange = sheet.items.reduce((sum, item) => {
+        const existingChange = sheetItems.reduce((sum, item) => {
             const original = initialAmounts[item.category_code] || 0;
             const current = getBudgetedAmount(item.category_code);
             return sum + (current - original);
@@ -639,7 +641,7 @@ export const SheetAddendumForm: React.FC<SheetAddendumFormProps> = ({
                                         </tr>
                                     </thead>
                                     <tbody>
-                                        {sheet.items.map((item) => {
+                                        {sheetItems.map((item) => {
                                             const original = initialAmounts[item.category_code] || 0;
                                             const current = getBudgetedAmount(item.category_code);
                                             const diff = current - original;

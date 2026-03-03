@@ -1,15 +1,22 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState, useRef } from 'react';
 import { SupabaseClient } from '@supabase/supabase-js';
-import ExcelJS from 'exceljs';
-import { Plus, Upload, AlertTriangle, FileText, CheckCircle2, ChevronDown, ChevronRight } from 'lucide-react';
+import ExcelJS from 'exceljs/dist/exceljs.min.js';
+import { Plus, Upload, AlertTriangle, FileText, CheckCircle2, ChevronDown, ChevronRight, TrendingUp, BarChart3 } from 'lucide-react';
 import { eachMonthOfInterval, endOfMonth, format, startOfMonth } from 'date-fns';
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '../../../../../components/ui/dialog';
 import { Button } from '../../../../../components/ui/button';
 import { Input } from '../../../../../components/ui/input';
 
 import { Company, Transaction } from '../../../types';
-import { formatCurrency, parseMoneyToNumber } from '../../../utils';
+import { formatCurrency, parseMoneyToNumber, CAT_COL_WIDTH } from '../../../utils';
+
+const VALUE_COL_WIDTH = 160;
+const HEADER_BG = '#f8fafc';
+const FOOTER_BG = '#0f172a';
+const BORDER_LIGHT = 'rgba(226, 232, 240, 1)';
+const BORDER_DARK = 'rgba(30, 41, 59, 1)';
 
 type BudgetVersionType = 'initial' | 'forecast';
 
@@ -135,7 +142,7 @@ const readExcelRows = async (file: File): Promise<string[][]> => {
 
     const buffer = await file.arrayBuffer();
     const workbook = new ExcelJS.Workbook();
-    await workbook.xlsx.load(buffer);
+    await workbook.xlsx.load(new Uint8Array(buffer) as any);
 
     const worksheet = workbook.worksheets[0];
     if (!worksheet) return [];
@@ -257,6 +264,12 @@ const BudgetTab: React.FC<BudgetTabProps> = ({
     const [budgetLines, setBudgetLines] = useState<Array<{ coa_code: string; cost_center: string; year: number; month: number; amount: number; company: Company }>>([]);
 
     const [expandedGroups, setExpandedGroups] = useState<Record<string, boolean>>({});
+    const [showChart, setShowChart] = useState(false);
+
+    const headerScrollRef = useRef<HTMLDivElement>(null);
+    const bodyScrollRef = useRef<HTMLDivElement>(null);
+    const footerScrollRef = useRef<HTMLDivElement>(null);
+    const categoryBodyRef = useRef<HTMLDivElement>(null);
 
     useEffect(() => {
         setNewYear(activeYear);
@@ -404,6 +417,24 @@ const BudgetTab: React.FC<BudgetTabProps> = ({
         return out;
     }, [data, selectedCompany, selectedCostCenters, startDate, endDate]);
 
+    const nameByCodeFromTransactions = useMemo(() => {
+        const out: Record<string, string> = {};
+        for (const t of data) {
+            const raw = String((t as any)?.category ?? '').trim();
+            const m = raw.match(/^([\d\.]+)\s*(.*)$/);
+            if (!m) continue;
+
+            const code = String(m[1] ?? '').trim();
+            const name = String(m[2] ?? '').trim();
+            if (!code || !name) continue;
+
+            if (!out[code] || name.length > out[code].length) {
+                out[code] = name;
+            }
+        }
+        return out;
+    }, [data]);
+
     const compareRows = useMemo(() => {
         const codes = new Set<string>([...Object.keys(plannedByCode), ...Object.keys(actualByCode)]);
         const arr = Array.from(codes);
@@ -413,77 +444,169 @@ const BudgetTab: React.FC<BudgetTabProps> = ({
             const actual = actualByCode[code] ?? 0;
             const diff = planned - actual;
             const rename = categoryRenames[code];
-            const label = rename ? (rename.startsWith(code) ? rename : `${code} ${rename}`) : code;
+            const fallbackName = nameByCodeFromTransactions[code];
+            const label = rename
+                ? (rename.startsWith(code) ? rename : `${code} ${rename}`)
+                : (fallbackName ? `${code} ${fallbackName}` : code);
             return { code, label, planned, actual, diff };
         });
-    }, [plannedByCode, actualByCode, categoryRenames]);
+    }, [plannedByCode, actualByCode, categoryRenames, nameByCodeFromTransactions]);
 
-    const compareGroups = useMemo(() => {
-        const groups: Record<string, typeof compareRows> = {};
+    const compareTree = useMemo(() => {
+        type Node = {
+            code: string;
+            title: string;
+            level: number;
+            children: Set<string>;
+            ownPlanned: number;
+            ownActual: number;
+            planned: number;
+            actual: number;
+            diff: number;
+        };
+
+        const buildTitle = (code: string): string => {
+            const rename = categoryRenames[code];
+            if (rename) return rename.startsWith(code) ? rename : `${code} ${rename}`;
+
+            const fallbackName = nameByCodeFromTransactions[code];
+            return fallbackName ? `${code} ${fallbackName}` : code;
+        };
+
+        const nodes = new Map<string, Node>();
+
+        const ensureNode = (code: string): Node => {
+            const existing = nodes.get(code);
+            if (existing) return existing;
+            const created: Node = {
+                code,
+                title: buildTitle(code),
+                level: String(code).split('.').filter(Boolean).length || 1,
+                children: new Set<string>(),
+                ownPlanned: 0,
+                ownActual: 0,
+                planned: 0,
+                actual: 0,
+                diff: 0,
+            };
+            nodes.set(code, created);
+            return created;
+        };
+
+        // Seed leaf nodes (codes present in either planned/actual)
         for (const r of compareRows) {
-            const head = String(r.code ?? '').split('.')[0] || String(r.code ?? '');
-            const groupKey = head.trim() || 'Outros';
-            (groups[groupKey] ??= []).push(r);
+            const code = String(r.code ?? '').trim();
+            if (!code) continue;
+            const node = ensureNode(code);
+            node.title = r.label;
+            node.ownPlanned += r.planned ?? 0;
+            node.ownActual += r.actual ?? 0;
         }
 
-        const groupKeys = Object.keys(groups).sort((a, b) => a.localeCompare(b, undefined, { numeric: true }));
-        return groupKeys.map((g) => {
-            const children = (groups[g] ?? []).slice().sort((a, b) => a.code.localeCompare(b.code, undefined, { numeric: true }));
-            const planned = children.reduce((acc, r) => acc + (r.planned ?? 0), 0);
-            const actual = children.reduce((acc, r) => acc + (r.actual ?? 0), 0);
-            const diff = planned - actual;
-
-            const rename = categoryRenames[g];
-            const label = rename ? (rename.startsWith(g) ? rename : `${g} ${rename}`) : g;
-            const leafChildren = children.filter((c) => c.code !== g);
-
-            return {
-                code: g,
-                label,
-                planned,
-                actual,
-                diff,
-                children: leafChildren,
-            };
-        });
-    }, [compareRows, categoryRenames]);
-
-    const visibleCompareRows = useMemo(() => {
-        const out: Array<
-            | { kind: 'group'; code: string; label: string; planned: number; actual: number; diff: number; childCount: number; expanded: boolean }
-            | { kind: 'leaf'; code: string; label: string; planned: number; actual: number; diff: number; parent: string }
-        > = [];
-
-        for (const g of compareGroups) {
-            const expanded = Boolean(expandedGroups[g.code]);
-            out.push({
-                kind: 'group',
-                code: g.code,
-                label: g.label,
-                planned: g.planned,
-                actual: g.actual,
-                diff: g.diff,
-                childCount: g.children.length,
-                expanded,
-            });
-
-            if (expanded) {
-                for (const c of g.children) {
-                    out.push({
-                        kind: 'leaf',
-                        code: c.code,
-                        label: c.label,
-                        planned: c.planned,
-                        actual: c.actual,
-                        diff: c.diff,
-                        parent: g.code,
-                    });
-                }
+        // Ensure all prefix nodes exist and connect parent -> child
+        for (const code of nodes.keys()) {
+            const parts = String(code).split('.').filter(Boolean);
+            for (let i = 1; i < parts.length; i++) {
+                const parentCode = parts.slice(0, i).join('.');
+                const childCode = parts.slice(0, i + 1).join('.');
+                const parent = ensureNode(parentCode);
+                ensureNode(childCode);
+                parent.children.add(childCode);
             }
         }
 
+        // Compute totals bottom-up (children already computed because deeper level)
+        const nodeList = Array.from(nodes.values()).sort((a, b) => b.level - a.level);
+        for (const node of nodeList) {
+            let planned = node.ownPlanned;
+            let actual = node.ownActual;
+            for (const childCode of node.children) {
+                const child = nodes.get(childCode);
+                if (!child) continue;
+                planned += child.planned;
+                actual += child.actual;
+            }
+            node.planned = planned;
+            node.actual = actual;
+            node.diff = planned - actual;
+        }
+
+        const roots = Array.from(nodes.values())
+            .filter((n) => n.level === 1)
+            .map((n) => n.code)
+            .sort((a, b) => a.localeCompare(b, undefined, { numeric: true }));
+
+        const sortedChildren = (code: string): string[] => {
+            const node = nodes.get(code);
+            if (!node) return [];
+            return Array.from(node.children).sort((a, b) => a.localeCompare(b, undefined, { numeric: true }));
+        };
+
+        return { nodes, roots, sortedChildren };
+    }, [compareRows, categoryRenames, nameByCodeFromTransactions]);
+
+    const handleHorizontalScroll = (source: HTMLDivElement) => {
+        const scrollLeft = source.scrollLeft;
+        if (headerScrollRef.current && headerScrollRef.current !== source) {
+            headerScrollRef.current.scrollLeft = scrollLeft;
+        }
+        if (bodyScrollRef.current && bodyScrollRef.current !== source) {
+            bodyScrollRef.current.scrollLeft = scrollLeft;
+        }
+        if (footerScrollRef.current && footerScrollRef.current !== source) {
+            footerScrollRef.current.scrollLeft = scrollLeft;
+        }
+    };
+
+    const handleBodyVerticalScroll = (e: React.UIEvent<HTMLDivElement>) => {
+        const target = e.currentTarget;
+        if (categoryBodyRef.current) {
+            categoryBodyRef.current.style.transform = `translateY(-${target.scrollTop}px)`;
+        }
+    };
+
+    const visibleCompareRows = useMemo(() => {
+        const out: Array<{
+            code: string;
+            title: string;
+            level: number;
+            planned: number;
+            actual: number;
+            diff: number;
+            childCount: number;
+            expanded: boolean;
+            isLeaf: boolean;
+        }> = [];
+
+        const { nodes, roots, sortedChildren } = compareTree;
+
+        const flatten = (code: string) => {
+            const node = nodes.get(code);
+            if (!node) return;
+            const children = sortedChildren(code);
+            const expanded = expandedGroups[code] ?? true;
+            const isLeaf = children.length === 0;
+
+            out.push({
+                code: node.code,
+                title: node.title,
+                level: node.level,
+                planned: node.planned,
+                actual: node.actual,
+                diff: node.diff,
+                childCount: children.length,
+                expanded,
+                isLeaf,
+            });
+
+            if (!isLeaf && expanded) {
+                for (const child of children) flatten(child);
+            }
+        };
+
+        for (const root of roots) flatten(root);
         return out;
-    }, [compareGroups, expandedGroups]);
+    }, [compareTree, expandedGroups]);
 
     const headerOptions = useMemo(() => {
         const rows = importRows;
@@ -892,11 +1015,11 @@ const BudgetTab: React.FC<BudgetTabProps> = ({
                 )}
             </div>
 
-            <div className="bg-white rounded-[2rem] shadow-[0_2px_15px_-3px_rgba(0,0,0,0.07)] border border-slate-200 overflow-hidden">
-                <div className="px-4 py-3 border-b border-slate-100 flex items-center justify-between gap-3 flex-wrap">
+            <div className="bg-white rounded-[2rem] shadow-[0_2px_15px_-3px_rgba(0,0,0,0.07)] border border-slate-200 p-6 space-y-4">
+                <div className="flex items-center justify-between gap-3 flex-wrap">
                     <div>
                         <div className="text-xs font-bold text-slate-600">Controle Orçamentário (Competência)</div>
-                        <div className="text-[11px] text-slate-400">Coluna 1: arquivo | Coluna 2: importação | Coluna 3: diferença</div>
+                        <div className="text-[11px] text-slate-400">Orçado • Previsto • Realizado • Diferença</div>
                     </div>
                     <div className="flex items-center gap-2">
                         <select
@@ -917,89 +1040,317 @@ const BudgetTab: React.FC<BudgetTabProps> = ({
                         <Button variant="outline" onClick={loadBudgetLinesForCompare} disabled={!compareVersionId || compareLoading}>
                             {compareLoading ? 'Atualizando…' : 'Atualizar'}
                         </Button>
+                        <Button 
+                            variant="outline" 
+                            onClick={() => setShowChart(true)} 
+                            disabled={visibleCompareRows.length === 0}
+                            className="gap-2"
+                        >
+                            <BarChart3 className="w-4 h-4" />
+                            Gráfico
+                        </Button>
                     </div>
                 </div>
 
                 {compareError && (
-                    <div className="p-4 text-xs text-rose-600">{compareError}</div>
+                    <div className="p-4 text-xs text-rose-600 bg-rose-50 rounded-lg border border-rose-200">{compareError}</div>
                 )}
 
                 {!compareError && versions.length === 0 && (
-                    <div className="p-6">
+                    <div className="p-6 text-center">
                         <div className="text-xs text-slate-500">Crie uma versão e importe um arquivo para ver o comparativo.</div>
                     </div>
                 )}
 
                 {!compareError && versions.length > 0 && (
-                    <div className="overflow-x-auto">
-                        <table className="min-w-full">
-                            <thead className="bg-slate-50/50 border-b border-slate-100">
-                                <tr>
-                                    <th className="text-left px-4 py-3 text-[10px] font-bold text-slate-500 uppercase tracking-wider whitespace-nowrap">Categoria</th>
-                                    <th className="text-right px-4 py-3 text-[10px] font-bold text-slate-500 uppercase tracking-wider whitespace-nowrap">Arquivo</th>
-                                    <th className="text-right px-4 py-3 text-[10px] font-bold text-slate-500 uppercase tracking-wider whitespace-nowrap">Importação</th>
-                                    <th className="text-right px-4 py-3 text-[10px] font-bold text-slate-500 uppercase tracking-wider whitespace-nowrap">Diferença</th>
-                                </tr>
-                            </thead>
-                            <tbody className="divide-y divide-slate-50">
-                                {visibleCompareRows.length === 0 ? (
-                                    <tr>
-                                        <td colSpan={4} className="px-4 py-10 text-center text-sm text-slate-500">
-                                            Nenhum dado no período selecionado.
-                                        </td>
-                                    </tr>
-                                ) : (
-                                    visibleCompareRows.map((r) => {
-                                        const isGroup = r.kind === 'group';
-                                        const label = r.label;
-                                        const planned = r.planned;
-                                        const actual = r.actual;
-                                        const diff = r.diff;
+                    <div className="flex-1 bg-white rounded-2xl shadow-sm border border-slate-200 flex flex-col" style={{ overflow: 'hidden', maxWidth: '100%', height: '600px' }}>
+                        {/* =================== HEADER (FIXO) =================== */}
+                        <div className="flex shrink-0">
+                            <div
+                                className="px-4 flex items-center text-[10px] font-bold text-slate-500 uppercase tracking-wider h-12 border-b border-r shrink-0"
+                                style={{
+                                    width: `${CAT_COL_WIDTH}px`,
+                                    minWidth: `${CAT_COL_WIDTH}px`,
+                                    background: HEADER_BG,
+                                    borderColor: BORDER_LIGHT,
+                                    boxShadow: '2px 0 8px -2px rgba(0,0,0,0.1)',
+                                    zIndex: 30,
+                                    position: 'sticky',
+                                    left: 0,
+                                }}
+                            >
+                                Categoria
+                            </div>
+                            <div
+                                ref={headerScrollRef}
+                                onScroll={(e) => handleHorizontalScroll(e.currentTarget)}
+                                className="flex-1"
+                                style={{ overflow: 'auto', overflowY: 'hidden' }}
+                            >
+                                <div className="flex h-12 border-b" style={{ minWidth: 'max-content' }}>
+                                    <div
+                                        className="flex items-center justify-center text-[10px] font-bold text-indigo-600 uppercase tracking-wider border-r"
+                                        style={{
+                                            width: `${VALUE_COL_WIDTH}px`,
+                                            minWidth: `${VALUE_COL_WIDTH}px`,
+                                            background: 'rgba(238, 242, 255, 0.5)',
+                                            borderColor: BORDER_LIGHT,
+                                        }}
+                                    >
+                                        Orçado
+                                    </div>
+                                    <div
+                                        className="flex items-center justify-center text-[10px] font-bold text-blue-600 uppercase tracking-wider border-r"
+                                        style={{
+                                            width: `${VALUE_COL_WIDTH}px`,
+                                            minWidth: `${VALUE_COL_WIDTH}px`,
+                                            background: 'rgba(219, 234, 254, 0.3)',
+                                            borderColor: BORDER_LIGHT,
+                                        }}
+                                    >
+                                        Previsto
+                                    </div>
+                                    <div
+                                        className="flex items-center justify-center text-[10px] font-bold text-slate-600 uppercase tracking-wider border-r"
+                                        style={{
+                                            width: `${VALUE_COL_WIDTH}px`,
+                                            minWidth: `${VALUE_COL_WIDTH}px`,
+                                            background: HEADER_BG,
+                                            borderColor: BORDER_LIGHT,
+                                        }}
+                                    >
+                                        Realizado
+                                    </div>
+                                    <div
+                                        className="flex items-center justify-center text-[10px] font-bold text-emerald-600 uppercase tracking-wider"
+                                        style={{
+                                            width: `${VALUE_COL_WIDTH}px`,
+                                            minWidth: `${VALUE_COL_WIDTH}px`,
+                                            background: 'rgba(236, 253, 245, 0.5)',
+                                            borderColor: BORDER_LIGHT,
+                                        }}
+                                    >
+                                        Diferença
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
 
+                        {/* =================== BODY (ROLÁVEL) =================== */}
+                        <div className="flex flex-1 overflow-hidden">
+                            <div
+                                className="flex flex-col overflow-hidden relative shrink-0"
+                                style={{
+                                    width: `${CAT_COL_WIDTH}px`,
+                                    minWidth: `${CAT_COL_WIDTH}px`,
+                                    borderRight: `1px solid ${BORDER_LIGHT}`,
+                                    boxShadow: '2px 0 8px -2px rgba(0,0,0,0.1)',
+                                    zIndex: 20,
+                                    position: 'sticky',
+                                    left: 0,
+                                    backgroundColor: 'white',
+                                }}
+                            >
+                                <div className="flex-1 overflow-hidden relative">
+                                    <div ref={categoryBodyRef}>
+                                        {visibleCompareRows.length === 0 ? (
+                                            <div className="px-4 py-10 text-center text-xs text-slate-500">
+                                                Nenhum dado no período selecionado.
+                                            </div>
+                                        ) : (
+                                            visibleCompareRows.map((r) => {
+                                                const hasChildren = r.childCount > 0;
+                                                const isGroup = hasChildren || r.level === 1;
+                                                const m = String(r.title ?? '').match(/^([\d\.]+)\s*(.*)$/);
+                                                const codePart = (m?.[1] ?? r.code).trim();
+                                                const namePart = (m?.[2] ?? '').trim();
+
+                                                return (
+                                                    <div
+                                                        key={`cat:${r.code}`}
+                                                        className={`px-4 border-b border-slate-100 ${isGroup ? 'bg-slate-50/50' : 'bg-white hover:bg-slate-50/30'}`}
+                                                        style={{ height: '48px', display: 'flex', alignItems: 'center' }}
+                                                    >
+                                                        {hasChildren ? (
+                                                            <button
+                                                                type="button"
+                                                                onClick={() => {
+                                                                    setExpandedGroups(prev => ({ ...prev, [r.code]: !prev[r.code] }));
+                                                                }}
+                                                                className="w-full flex items-center gap-2 text-left"
+                                                                aria-label={r.expanded ? 'Recolher grupo' : 'Expandir grupo'}
+                                                            >
+                                                                <span className="text-slate-500 shrink-0" style={{ marginLeft: (r.level - 1) * 14 }}>
+                                                                    {r.expanded ? <ChevronDown className="w-4 h-4" /> : <ChevronRight className="w-4 h-4" />}
+                                                                </span>
+
+                                                                <div className="flex-1 overflow-hidden leading-tight">
+                                                                    <div className="text-[10px] font-semibold text-slate-500 whitespace-nowrap truncate" title={codePart}>
+                                                                        {codePart}
+                                                                    </div>
+                                                                    {namePart && (
+                                                                        <div className="text-[11px] font-bold text-slate-800 uppercase tracking-wide truncate" title={namePart}>
+                                                                            {namePart}
+                                                                        </div>
+                                                                    )}
+                                                                </div>
+
+                                                                <span className="text-[10px] font-semibold text-slate-400 whitespace-nowrap shrink-0">({r.childCount})</span>
+                                                            </button>
+                                                        ) : (
+                                                            <div className="w-full flex items-center gap-2" style={{ paddingLeft: (r.level - 1) * 14 + 16 }}>
+                                                                <div className="flex-1 overflow-hidden leading-tight">
+                                                                    <div className="text-[10px] font-semibold text-slate-400 whitespace-nowrap truncate" title={codePart}>
+                                                                        {codePart}
+                                                                    </div>
+                                                                    {namePart && (
+                                                                        <div className="text-[11px] font-medium text-slate-700 truncate" title={namePart}>
+                                                                            {namePart}
+                                                                        </div>
+                                                                    )}
+                                                                </div>
+                                                            </div>
+                                                        )}
+                                                    </div>
+                                                );
+                                            })
+                                        )}
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div
+                                ref={bodyScrollRef}
+                                onScroll={(e) => {
+                                    handleHorizontalScroll(e.currentTarget);
+                                    handleBodyVerticalScroll(e);
+                                }}
+                                className="flex-1"
+                                style={{ overflow: 'auto' }}
+                            >
+                                <div style={{ minWidth: 'max-content' }}>
+                                    {visibleCompareRows.length === 0 ? (
+                                        <div className="py-10"></div>
+                                    ) : (
+                                        visibleCompareRows.map((r) => {
+                                            const isGroup = r.childCount > 0 || r.level === 1;
+                                            const planned = r.planned;
+                                            const actual = r.actual;
+                                            const diff = r.diff;
+                                            const budgeted = planned;
+
+                                            return (
+                                                <div
+                                                    key={`data:${r.code}`}
+                                                    className={`flex border-b border-slate-100 ${isGroup ? 'bg-slate-50/50' : 'bg-white hover:bg-slate-50/30'}`}
+                                                    style={{ height: '48px' }}
+                                                >
+                                                    <div
+                                                        className="flex items-center justify-end px-4 py-3 border-r border-slate-100"
+                                                        style={{ width: `${VALUE_COL_WIDTH}px`, minWidth: `${VALUE_COL_WIDTH}px` }}
+                                                    >
+                                                        <span className={isGroup ? 'text-[11px] font-bold text-indigo-700' : 'text-[11px] font-medium text-indigo-600'}>
+                                                            {formatCurrency(budgeted)}
+                                                        </span>
+                                                    </div>
+                                                    <div
+                                                        className="flex items-center justify-end px-4 py-3 border-r border-slate-100"
+                                                        style={{ width: `${VALUE_COL_WIDTH}px`, minWidth: `${VALUE_COL_WIDTH}px` }}
+                                                    >
+                                                        <span className={isGroup ? 'text-[11px] font-bold text-blue-700' : 'text-[11px] font-medium text-blue-600'}>
+                                                            {formatCurrency(planned)}
+                                                        </span>
+                                                    </div>
+                                                    <div
+                                                        className="flex items-center justify-end px-4 py-3 border-r border-slate-100"
+                                                        style={{ width: `${VALUE_COL_WIDTH}px`, minWidth: `${VALUE_COL_WIDTH}px` }}
+                                                    >
+                                                        <span className={isGroup ? 'text-[11px] font-bold text-slate-700' : 'text-[11px] font-medium text-slate-700'}>
+                                                            {formatCurrency(actual)}
+                                                        </span>
+                                                    </div>
+                                                    <div
+                                                        className="flex items-center justify-end px-4 py-3"
+                                                        style={{ width: `${VALUE_COL_WIDTH}px`, minWidth: `${VALUE_COL_WIDTH}px` }}
+                                                    >
+                                                        <span className={`${isGroup ? 'text-[11px] font-extrabold' : 'text-[11px] font-semibold'} ${diff >= 0 ? 'text-emerald-700' : 'text-rose-700'}`}>
+                                                            {formatCurrency(diff)}
+                                                        </span>
+                                                    </div>
+                                                </div>
+                                            );
+                                        })
+                                    )}
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* =================== FOOTER (FIXO) =================== */}
+                        <div className="flex shrink-0">
+                            <div
+                                className="px-6 flex items-center justify-between text-white h-14 shrink-0 border-r"
+                                style={{
+                                    width: `${CAT_COL_WIDTH}px`,
+                                    minWidth: `${CAT_COL_WIDTH}px`,
+                                    background: FOOTER_BG,
+                                    borderTop: `1px solid ${BORDER_DARK}`,
+                                    borderRight: `1px solid ${BORDER_LIGHT}`,
+                                    boxShadow: '2px 0 8px -2px rgba(0,0,0,0.1)',
+                                    zIndex: 30,
+                                    position: 'sticky',
+                                    left: 0,
+                                }}
+                            >
+                                <span className="text-[10px] font-bold uppercase tracking-wide whitespace-nowrap">Total Geral</span>
+                                <div className="p-1.5 rounded-lg bg-slate-800 text-emerald-400 shrink-0">
+                                    <TrendingUp className="w-4 h-4" />
+                                </div>
+                            </div>
+                            <div
+                                ref={footerScrollRef}
+                                onScroll={(e) => handleHorizontalScroll(e.currentTarget)}
+                                className="flex-1"
+                                style={{ overflow: 'auto', overflowY: 'hidden' }}
+                            >
+                                <div className="flex h-14" style={{ minWidth: 'max-content', borderTop: `1px solid ${BORDER_DARK}` }}>
+                                    {(() => {
+                                        const rootRows = visibleCompareRows.filter(r => r.level === 1);
+                                        const totalBudgeted = rootRows.reduce((sum, r) => sum + (r.planned ?? 0), 0);
+                                        const totalPlanned = rootRows.reduce((sum, r) => sum + (r.planned ?? 0), 0);
+                                        const totalActual = rootRows.reduce((sum, r) => sum + (r.actual ?? 0), 0);
+                                        const totalDiff = totalPlanned - totalActual;
                                         return (
-                                            <tr
-                                                key={isGroup ? `g:${r.code}` : `l:${r.code}`}
-                                                className={isGroup ? 'bg-slate-50/50' : 'bg-white'}
-                                            >
-                                                <td className="px-4 py-2.5">
-                                                    {isGroup ? (
-                                                        <button
-                                                            type="button"
-                                                            onClick={() => {
-                                                                setExpandedGroups(prev => ({ ...prev, [r.code]: !prev[r.code] }));
-                                                            }}
-                                                            className="w-full flex items-center gap-2 text-left"
-                                                            aria-label={r.expanded ? 'Recolher grupo' : 'Expandir grupo'}
-                                                        >
-                                                            <span className="text-slate-500">
-                                                                {r.childCount > 0 ? (
-                                                                    r.expanded ? <ChevronDown className="w-4 h-4" /> : <ChevronRight className="w-4 h-4" />
-                                                                ) : (
-                                                                    <span className="inline-block w-4" />
-                                                                )}
-                                                            </span>
-                                                            <span className="text-[11px] font-bold text-slate-700 uppercase tracking-wide truncate" title={label}>
-                                                                {label}
-                                                            </span>
-                                                            {r.childCount > 0 && (
-                                                                <span className="text-[10px] font-semibold text-slate-400 whitespace-nowrap">({r.childCount})</span>
-                                                            )}
-                                                        </button>
-                                                    ) : (
-                                                        <div className="pl-6 text-[11px] font-medium text-slate-700 truncate" title={label}>
-                                                            {label}
-                                                        </div>
-                                                    )}
-                                                </td>
-                                                <td className={`px-4 py-2.5 text-right whitespace-nowrap ${isGroup ? 'text-[11px] font-bold text-slate-700' : 'text-[11px] font-medium text-slate-700'}`}>{formatCurrency(planned)}</td>
-                                                <td className={`px-4 py-2.5 text-right whitespace-nowrap ${isGroup ? 'text-[11px] font-bold text-slate-700' : 'text-[11px] font-medium text-slate-700'}`}>{formatCurrency(actual)}</td>
-                                                <td className={`px-4 py-2.5 text-right whitespace-nowrap ${isGroup ? 'text-[11px] font-extrabold' : 'text-[11px] font-semibold'} ${diff >= 0 ? 'text-emerald-700' : 'text-rose-700'}`}>{formatCurrency(diff)}</td>
-                                            </tr>
+                                            <>
+                                                <div
+                                                    className="flex items-center justify-end px-4 border-r"
+                                                    style={{ width: `${VALUE_COL_WIDTH}px`, minWidth: `${VALUE_COL_WIDTH}px`, background: FOOTER_BG, borderColor: BORDER_DARK }}
+                                                >
+                                                    <span className="text-[11px] font-bold text-indigo-400">{formatCurrency(totalBudgeted)}</span>
+                                                </div>
+                                                <div
+                                                    className="flex items-center justify-end px-4 border-r"
+                                                    style={{ width: `${VALUE_COL_WIDTH}px`, minWidth: `${VALUE_COL_WIDTH}px`, background: FOOTER_BG, borderColor: BORDER_DARK }}
+                                                >
+                                                    <span className="text-[11px] font-bold text-blue-400">{formatCurrency(totalPlanned)}</span>
+                                                </div>
+                                                <div
+                                                    className="flex items-center justify-end px-4 border-r"
+                                                    style={{ width: `${VALUE_COL_WIDTH}px`, minWidth: `${VALUE_COL_WIDTH}px`, background: FOOTER_BG, borderColor: BORDER_DARK }}
+                                                >
+                                                    <span className="text-[11px] font-bold text-slate-300">{formatCurrency(totalActual)}</span>
+                                                </div>
+                                                <div
+                                                    className="flex items-center justify-end px-4"
+                                                    style={{ width: `${VALUE_COL_WIDTH}px`, minWidth: `${VALUE_COL_WIDTH}px`, background: FOOTER_BG }}
+                                                >
+                                                    <span className={`text-[11px] font-extrabold ${totalDiff >= 0 ? 'text-emerald-400' : 'text-rose-400'}`}>{formatCurrency(totalDiff)}</span>
+                                                </div>
+                                            </>
                                         );
-                                    })
-                                )}
-                            </tbody>
-                        </table>
+                                    })()}
+                                </div>
+                            </div>
+                        </div>
                     </div>
                 )}
             </div>
@@ -1287,6 +1638,65 @@ const BudgetTab: React.FC<BudgetTabProps> = ({
                                 </Button>
                             </div>
                         </div>
+                    </div>
+                </DialogContent>
+            </Dialog>
+
+            {/* Modal Gráfico Comparativo */}
+            <Dialog open={showChart} onOpenChange={setShowChart}>
+                <DialogContent className="max-w-5xl max-h-[90vh] overflow-y-auto">
+                    <DialogHeader>
+                        <DialogTitle>Gráfico Comparativo: Previsto vs Realizado</DialogTitle>
+                        <DialogDescription>
+                            Comparação visual entre valores previstos e realizados por categoria principal
+                        </DialogDescription>
+                    </DialogHeader>
+                    <div className="mt-4">
+                        <ResponsiveContainer width="100%" height={500}>
+                            <BarChart
+                                data={visibleCompareRows
+                                    .filter(r => r.level === 1)
+                                    .map(r => ({
+                                        categoria: r.title.length > 25 ? r.title.substring(0, 25) + '...' : r.title,
+                                        Previsto: r.planned,
+                                        Realizado: r.actual,
+                                        Diferença: r.diff,
+                                    }))}
+                                margin={{ top: 20, right: 30, left: 20, bottom: 80 }}
+                            >
+                                <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
+                                <XAxis 
+                                    dataKey="categoria" 
+                                    angle={-45} 
+                                    textAnchor="end" 
+                                    height={100}
+                                    tick={{ fontSize: 11, fill: '#475569' }}
+                                />
+                                <YAxis 
+                                    tick={{ fontSize: 11, fill: '#475569' }}
+                                    tickFormatter={(value) => {
+                                        if (value >= 1000000) return `${(value / 1000000).toFixed(1)}M`;
+                                        if (value >= 1000) return `${(value / 1000).toFixed(0)}k`;
+                                        return value.toFixed(0);
+                                    }}
+                                />
+                                <Tooltip 
+                                    formatter={(value) => formatCurrency(Number(value ?? 0))}
+                                    contentStyle={{
+                                        backgroundColor: 'rgba(255, 255, 255, 0.98)',
+                                        border: '1px solid #e2e8f0',
+                                        borderRadius: '8px',
+                                        fontSize: '12px',
+                                    }}
+                                />
+                                <Legend 
+                                    wrapperStyle={{ fontSize: '12px', paddingTop: '20px' }}
+                                />
+                                <Bar dataKey="Previsto" fill="#3b82f6" radius={[8, 8, 0, 0]} />
+                                <Bar dataKey="Realizado" fill="#64748b" radius={[8, 8, 0, 0]} />
+                                <Bar dataKey="Diferença" fill="#10b981" radius={[8, 8, 0, 0]} />
+                            </BarChart>
+                        </ResponsiveContainer>
                     </div>
                 </DialogContent>
             </Dialog>

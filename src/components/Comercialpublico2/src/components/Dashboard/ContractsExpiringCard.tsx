@@ -1,6 +1,6 @@
 import React, { useState, useMemo, useEffect } from 'react';
 import { FileText, AlertTriangle, Calendar, Clock, Timer } from 'lucide-react';
-import { supabase } from '../../../../../lib/supabase';
+import { supabase } from '../../lib/supabase';
 import { formatCurrency, formatDateBR, Contract, ContractAddendum, ContractWithAddendums } from '../../../../../lib/contractUtils';
 
 export const ContractsExpiringCard: React.FC = () => {

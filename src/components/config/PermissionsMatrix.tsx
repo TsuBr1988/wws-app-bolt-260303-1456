@@ -14,6 +14,20 @@ interface PermissionsMatrixProps {
 }
 
 const PAGES_AND_INDICATORS = {
+  'marketing': [
+    'Marketing',
+    'Marketing > Solicitações',
+    'Marketing > Comparativo de Plataformas',
+    'Marketing > Planejamento',
+    'Marketing > Tarefas',
+    'Marketing > Atas',
+    'Solicitações - Pedir',
+    'Solicitações - Editar',
+    'Atas - Pedir',
+    'Atas - Editar',
+    'Tarefas - Pedir',
+    'Tarefas - Editar',
+  ],
   'cultura': [
     'Empréstimo de Livros',
     'Missão, Visão e Valores',
@@ -94,6 +108,7 @@ const PAGES_AND_INDICATORS = {
 };
 
 const PAGE_LABELS: Record<string, string> = {
+  'marketing': 'Marketing',
   'cultura': 'Cultura',
   'rh': 'RH',
   'operacional': 'Operacional',

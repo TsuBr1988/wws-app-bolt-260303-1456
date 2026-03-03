@@ -5,8 +5,10 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Button } from '@/components/ui/button';
 import { RefreshCw } from 'lucide-react';
 import { buscarDREPorContrato, listarContratosDRE, DRELinha } from '@/services/dreService';
-import { supabase } from '@/lib/supabase';
+import { getDatabase } from '@/lib/databaseResolver';
 import { useAuth } from '@/hooks/useAuth';
+
+const supabase = getDatabase('RH');
 
 interface ContratoDRE {
   id: string;
@@ -120,9 +122,9 @@ export function DRECard() {
     try {
       setImporting(true);
 
-      const apiUrl = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/importar-dre`;
+      const apiUrl = `${import.meta.env.VITE_SUPABASE_GERAL_URL}/functions/v1/importar-dre`;
       const headers = {
-        'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`,
+        'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_GERAL_ANON}`,
         'Content-Type': 'application/json',
       };
 

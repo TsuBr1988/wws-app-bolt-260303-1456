@@ -3,7 +3,7 @@ import React, { useState, useMemo } from 'react';
 import { Wallet, TrendingUp, BarChart3, BrainCircuit, Sparkles, Loader2, X, ChevronLeft, ChevronRight, Tag, ChevronDown, Check, Search, List, ChevronUp } from 'lucide-react';
 import { GoogleGenAI } from "@google/genai";
 import { endOfMonth, isWithinInterval, format, startOfYear, endOfYear, addYears, addDays, compareAsc, addMonths, differenceInCalendarMonths } from 'date-fns';
-import ptBR from 'date-fns/locale/pt-BR';
+import { ptBR } from 'date-fns/locale/pt-BR';
 import { Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, ComposedChart, Line, Legend, PieChart as RechartsPieChart, Pie, Cell } from 'recharts';
 import MetricCard from '../../../MetricCard';
 import { formatCurrency, getCompanyShortName, getCompanyTextClass, startOfMonth, getEffectiveDate } from '../../../utils';
@@ -826,7 +826,7 @@ const DashboardTab: React.FC<DashboardTabProps> = ({ kpiSaldoStats, stats, month
                                             <Cell key={`cell-${index}`} fill={['#6366f1', '#8b5cf6', '#ec4899', '#f43f5e', '#f97316'][index % 5]} />
                                         ))}
                                     </Pie>
-                                    <Tooltip formatter={(value: number) => formatCurrency(value)} contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 4px 15px rgba(0,0,0,0.1)' }} />
+                                    <Tooltip formatter={(value) => formatCurrency(Number(value ?? 0))} contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 4px 15px rgba(0,0,0,0.1)' }} />
                                 </RechartsPieChart>
                             </ResponsiveContainer>
                         </div>

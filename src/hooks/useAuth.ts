@@ -1,5 +1,7 @@
 import { useState, useEffect } from 'react';
-import { supabase } from '@/lib/supabase';
+import { getDatabase } from '@/lib/databaseResolver';
+
+const supabase = getDatabase('RH');
 
 const debugLog = (...args: unknown[]) => {
   if (import.meta.env.DEV && import.meta.env.VITE_DEBUG_LOGS === 'true') console.log(...args);

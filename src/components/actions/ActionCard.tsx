@@ -5,7 +5,9 @@ import type { Action } from '../../pages/AtasAcoesPage';
 import { format, parseISO, differenceInDays } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { ActionCommentsModal } from './ActionCommentsModal';
-import { supabase } from '../../lib/supabase';
+import { getDatabase } from '../../lib/databaseResolver';
+
+const supabase = getDatabase('ATAS');
 
 interface ActionCardProps {
   action: Action;

@@ -314,6 +314,7 @@ export interface Database {
       proposals: {
         Row: {
           id: string
+          empresa: string | null
           client: string
           monthly_value: number
           months: number
@@ -331,6 +332,7 @@ export interface Database {
         }
         Insert: {
           id?: string
+          empresa?: string | null
           client: string
           monthly_value: number
           months: number
@@ -348,6 +350,7 @@ export interface Database {
         }
         Update: {
           id?: string
+          empresa?: string | null
           client?: string
           monthly_value?: number
           months?: number

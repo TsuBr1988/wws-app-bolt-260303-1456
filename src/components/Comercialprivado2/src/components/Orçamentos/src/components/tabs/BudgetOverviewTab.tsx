@@ -71,6 +71,13 @@ export const BudgetOverviewTab = ({
     return isNaN(parsed) ? defaultValue : parsed;
   };
 
+  const formatPeopleCount = (value: number): string => {
+    return value.toLocaleString('pt-BR', {
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2,
+    });
+  };
+
   useEffect(() => {
     if (activeBudget && activeTab === 'geral') {
       console.log('🔄 Recarregando dados - aba voltou para "geral"');
@@ -644,6 +651,10 @@ export const BudgetOverviewTab = ({
 
         // Equipamentos: valores são para 1 funcionário, multiplicar pela quantidade de funcionários da função
         const escalaConfig = ESCALAS[funcao.escala];
+        if (!escalaConfig) {
+          console.warn(`⚠️ Escala não encontrada para função ${funcao.nome}: ${funcao.escala}`);
+          return null;
+        }
         const funcionariosDaFuncao = funcao.qtd * escalaConfig.multiplier;
         const totalEquipamentosFuncao = equipamentosParaEstaFuncao.reduce((sum, e) => sum + e.monthly_value, 0) * funcionariosDaFuncao;
 
@@ -683,16 +694,19 @@ export const BudgetOverviewTab = ({
 
         const totalPessoasMateriais = funcoesQueReceberamMateriais.reduce((sum, f) => {
           const escalaConfigTemp = ESCALAS[f.escala];
+          if (!escalaConfigTemp) return sum;
           const funcionarios = f.qtd * escalaConfigTemp.multiplier;
           return sum + funcionarios;
         }, 0);
         const totalPessoasCapex = funcoesQueReceberamCapex.reduce((sum, f) => {
           const escalaConfigTemp = ESCALAS[f.escala];
+          if (!escalaConfigTemp) return sum;
           const funcionarios = f.qtd * escalaConfigTemp.multiplier;
           return sum + funcionarios;
         }, 0);
         const totalPessoasOutros = funcoesQueReceberamOutros.reduce((sum, f) => {
           const escalaConfigTemp = ESCALAS[f.escala];
+          if (!escalaConfigTemp) return sum;
           const funcionarios = f.qtd * escalaConfigTemp.multiplier;
           return sum + funcionarios;
         }, 0);
@@ -713,7 +727,7 @@ export const BudgetOverviewTab = ({
           totalOutrosFuncao,
           minimumWage
         );
-      }));
+      })).then(results => results.filter((f): f is FunctionData => f !== null));
 
       funcoesDados.forEach((f) => {
         const remunValues = [f.s, f.vPeric, f.vInsal, f.vGrat, f.vNot, f.vRed];
@@ -922,10 +936,16 @@ export const BudgetOverviewTab = ({
                 TOTAL FUNCIONÁRIOS
               </div>
               <div className="text-2xl font-bold text-purple-900">
-                {funcoes.reduce((total, funcao) => {
-                  const escalaConfig = ESCALAS[funcao.escala];
-                  return total + (funcao.qtd * escalaConfig.multiplier);
-                }, 0)}
+                {formatPeopleCount(
+                  funcoes.reduce((total, funcao) => {
+                    const escalaConfig = ESCALAS[funcao.escala];
+                    if (!escalaConfig) {
+                      console.warn(`⚠️ Escala não encontrada: ${funcao.escala}`);
+                      return total;
+                    }
+                    return total + (funcao.qtd * escalaConfig.multiplier);
+                  }, 0)
+                )}
               </div>
             </div>
 
@@ -937,6 +957,7 @@ export const BudgetOverviewTab = ({
                 {(() => {
                   const totalFuncionarios = funcoes.reduce((total, funcao) => {
                     const escalaConfig = ESCALAS[funcao.escala];
+                    if (!escalaConfig) return total;
                     return total + (funcao.qtd * escalaConfig.multiplier);
                   }, 0);
                   return totalFuncionarios > 0
@@ -1040,6 +1061,10 @@ export const BudgetOverviewTab = ({
                 <tbody>
                   {funcoes.map((funcao, index) => {
                     const escalaConfig = ESCALAS[funcao.escala];
+                    if (!escalaConfig) {
+                      console.warn(`⚠️ Escala não encontrada para tabela: ${funcao.escala}`);
+                      return null;
+                    }
                     const numeroPessoas = funcao.qtd * escalaConfig.multiplier;
                     const funcaoResultado = resultado?.funcoesDados.find(
                       (fd: any) => fd.id === funcao.id
@@ -1056,7 +1081,7 @@ export const BudgetOverviewTab = ({
                           {funcao.qtd}
                         </td>
                         <td className="px-2 py-3 text-center text-gray-700 font-medium text-xs">
-                          {numeroPessoas}
+                          {formatPeopleCount(numeroPessoas)}
                         </td>
                         <td className="px-4 py-3 text-right text-gray-900 font-medium text-xs">
                           {funcaoResultado ? (

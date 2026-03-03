@@ -1,7 +1,7 @@
 
 import React, { useRef, useEffect, useState, useMemo } from 'react';
 import { format, eachMonthOfInterval } from 'date-fns';
-import ptBR from 'date-fns/locale/pt-BR';
+import { ptBR } from 'date-fns/locale/pt-BR';
 import {
   CoaNode,
   MonthlyValues,
@@ -158,7 +158,7 @@ const CoaTab: React.FC<CoaTabProps> = ({
     setSelectedValueType(null);
   };
 
-  const handleValueClick = (node: CoaNode, month: Date, valueType: 'projected' | 'realized' | 'accrual') => {
+  const handleValueClick = (node: CoaNode, month: Date, valueType: 'projected' | 'realized' | 'accrual' | 'unrealized') => {
     setSelectedCoaNode(node);
     setSelectedMonth(month);
     setSelectedValueType(valueType);
@@ -615,7 +615,7 @@ const CoaTab: React.FC<CoaTabProps> = ({
                   <Tooltip
                     cursor={{fill: '#f8fafc'}}
                     contentStyle={{borderRadius: '16px', border: 'none', boxShadow: '0 4px 20px -5px rgba(0,0,0,0.1)'}}
-                    formatter={(value: number) => formatCurrency(value)}
+                    formatter={(value) => formatCurrency(Number(value ?? 0))}
                   />
                   <Bar
                     dataKey="bar1"

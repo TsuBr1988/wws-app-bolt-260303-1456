@@ -19,7 +19,19 @@ interface ProposalFormProps {
 export const ProposalForm: React.FC<ProposalFormProps> = ({ onSubmit, onCancel, initialData }) => {
   const { data: employees = [] } = useSupabaseQuery('employees');
 
+  const EMPRESA_OPTIONS = ['WWS', 'Worldwide', '2WS'] as const;
+
+  const FAMILY_OPTIONS = [
+    'Shopping',
+    'Saúde',
+    'Múltiplos pontos (Varejo)',
+    'Indústria',
+    'Condomínio',
+    'Aeroportos',
+  ];
+
   const [formData, setFormData] = useState({
+    empresa: '' as string,
     client: initialData?.client || '',
     monthlyValue: initialData?.monthlyValue || 0,
     months: initialData?.months || 12,
@@ -27,6 +39,7 @@ export const ProposalForm: React.FC<ProposalFormProps> = ({ onSubmit, onCancel, 
     closerId: '',
     sdrId: '',
     proposalDate: getCurrentDateForInput(), // Data atual como padrão
+    familia: '',
     closingDate: '',
     lostDate: '',
     lostReason: 'Fechou com concorrente' as const,
@@ -61,6 +74,8 @@ export const ProposalForm: React.FC<ProposalFormProps> = ({ onSubmit, onCancel, 
       commissionRate: rate,
       sdrId: formData.sdrId || undefined,
       budgetId: formData.budgetId || undefined,
+      empresa: formData.empresa || undefined,
+      familia: formData.familia || undefined,
       closingDate: formData.status === 'Fechado' ? formatTimestampForDb(formData.closingDate) : null,
       lostDate: formData.status === 'Perdido' ? formatTimestampForDb(formData.lostDate) : null,
       lostReason: formData.status === 'Perdido' ? formData.lostReason : null,
@@ -92,6 +107,25 @@ export const ProposalForm: React.FC<ProposalFormProps> = ({ onSubmit, onCancel, 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
+                Empresa
+              </label>
+              <select
+                value={formData.empresa}
+                onChange={(e) => setFormData({ ...formData, empresa: e.target.value })}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500"
+                required
+              >
+                <option value="">Selecione uma empresa</option>
+                {EMPRESA_OPTIONS.map(opt => (
+                  <option key={opt} value={opt}>
+                    {opt}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
                 Cliente
               </label>
               <input
@@ -118,6 +152,24 @@ export const ProposalForm: React.FC<ProposalFormProps> = ({ onSubmit, onCancel, 
               <p className="text-xs text-gray-500 mt-1">
                 Data em que a proposta foi criada (pode ser retroativa)
               </p>
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Família
+              </label>
+              <select
+                value={formData.familia}
+                onChange={(e) => setFormData({ ...formData, familia: e.target.value })}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500"
+              >
+                <option value="">Selecione uma família</option>
+                {FAMILY_OPTIONS.map(opt => (
+                  <option key={opt} value={opt}>
+                    {opt}
+                  </option>
+                ))}
+              </select>
             </div>
 
             <div>

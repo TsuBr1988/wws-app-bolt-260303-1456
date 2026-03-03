@@ -63,18 +63,6 @@ const BSCSidebar = ({ activeTab, setActiveTab, hasAccess }: {
           );
         })}
       </nav>
-
-      <div className="p-3">
-        <div className="bg-gradient-to-br from-zinc-800 to-zinc-900 rounded-xl p-3 border border-white/5 shadow-lg">
-          <div className="flex items-center gap-2 mb-1.5">
-            <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
-            <span className="text-[10px] font-bold text-zinc-300">Sistema Online</span>
-          </div>
-          <p className="text-[9px] text-zinc-500 leading-relaxed">
-            Balanced Scorecard estratégico.
-          </p>
-        </div>
-      </div>
     </div>
   );
 };

@@ -1,6 +1,6 @@
 import { useMemo, useState, useEffect } from 'react';
 import { eachMonthOfInterval, endOfMonth as dfnsEndOfMonth, format } from 'date-fns';
-import ptBR from 'date-fns/locale/pt-BR';
+import { ptBR } from 'date-fns/locale/pt-BR';
 import { SupabaseClient } from '@supabase/supabase-js';
 import { startOfMonth, endOfMonth } from '../../../utils';
 import {

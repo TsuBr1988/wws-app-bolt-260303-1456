@@ -1,8 +1,10 @@
 import { useState, useEffect } from 'react';
 import { X, TrendingUp, Calendar } from 'lucide-react';
-import { supabase } from '@/lib/supabase';
+import { getDatabase } from '@/lib/databaseResolver';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
+
+const supabase = getDatabase('RH');
 
 interface KpiHistoryModalProps {
   isOpen: boolean;

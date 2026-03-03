@@ -1,6 +1,7 @@
 
-import React, { useState } from 'react';
+import React, { useMemo, useState } from 'react';
 import { Trophy, Building2, Landmark, Users, Briefcase, BarChart3, TrendingUp, TrendingDown, AlertCircle, Info } from 'lucide-react';
+import { CartesianGrid, ResponsiveContainer, Scatter, ScatterChart, Tooltip, XAxis, YAxis } from 'recharts';
 import MetricCard from '../../../MetricCard';
 import KPIDetailChartModal from '../../../KPIDetailChartModal';
 import ClientListModal from './components/ClientListModal';
@@ -45,6 +46,34 @@ const KpisTab: React.FC<KpisTabProps> = ({
     const [kpiListModalType, setKpiListModalType] = useState<'positive' | 'negative' | null>(null);
     const [selectedKpiClient, setSelectedKpiClient] = useState<string | null>(null);
     const [kpiDetailModalData, setKpiDetailModalData] = useState<{title: string, data: {name: string, value: number}[], averageValue?: number} | null>(null);
+
+    const marginScatterData = useMemo(() => {
+        const toPoint = (m: any) => {
+            const grossRevenue = Number(m?.rev ?? 0);
+            const margin = Number(m?.margin ?? 0);
+            if (!Number.isFinite(grossRevenue) || grossRevenue <= 0) return null;
+            if (!Number.isFinite(margin)) return null;
+
+            const marginPercent = (margin / grossRevenue) * 100;
+            if (!Number.isFinite(marginPercent)) return null;
+
+            const kind: 'Positiva' | 'Negativa' = margin >= 0 ? 'Positiva' : 'Negativa';
+
+            return {
+                name: String(m?.name ?? ''),
+                kind,
+                grossRevenue,
+                margin,
+                marginPercent
+            };
+        };
+
+        const points = (Array.isArray(kpiData?.allMargins) ? kpiData.allMargins : [])
+            .map((m: any) => toPoint(m))
+            .filter(Boolean) as Array<{ name: string; kind: 'Positiva' | 'Negativa'; grossRevenue: number; margin: number; marginPercent: number }>;
+
+        return points;
+    }, [kpiData?.allMargins]);
 
     return (
         <div className="px-10 py-6 animate-fade-in pb-20">
@@ -206,6 +235,57 @@ const KpisTab: React.FC<KpisTabProps> = ({
                         )}
                     </div>
                 </div>
+            </div>
+
+            <div className="bg-white p-8 rounded-[2rem] shadow-[0_2px_15px_-3px_rgba(0,0,0,0.07)] border border-slate-100 mb-6">
+                <div className="flex items-center justify-between mb-2">
+                    <h3 className="text-base font-bold text-slate-900">Margem% x Faturamento Bruto (Todos os contratos)</h3>
+                </div>
+                <div className="text-xs font-medium text-slate-500 mb-6">
+                    Eixo X: margem% (margem R$ / faturamento bruto). Eixo Y: faturamento bruto.
+                </div>
+
+                {marginScatterData.length > 0 ? (
+                    <div className="h-[320px] w-full">
+                        <ResponsiveContainer width="100%" height="100%">
+                            <ScatterChart margin={{ top: 10, right: 20, left: 10, bottom: 10 }}>
+                                <CartesianGrid strokeDasharray="3 3" horizontal={true} vertical={true} stroke="#f1f5f9" />
+                                <XAxis
+                                    type="number"
+                                    dataKey="marginPercent"
+                                    tick={{ fontSize: 11, fill: '#64748b', fontWeight: 500 }}
+                                    tickFormatter={(v) => `${Number(v).toFixed(1)}%`}
+                                />
+                                <YAxis
+                                    type="number"
+                                    dataKey="grossRevenue"
+                                    tick={{ fontSize: 11, fill: '#64748b', fontWeight: 500 }}
+                                    tickFormatter={(v) => formatCurrency(Number(v ?? 0))}
+                                />
+                                <Tooltip
+                                    cursor={{ stroke: '#e2e8f0', strokeDasharray: '3 3' }}
+                                    content={({ active, payload }) => {
+                                        if (!active || !payload || payload.length === 0) return null;
+                                        const p = payload[0]?.payload as any;
+                                        if (!p) return null;
+                                        return (
+                                            <div className="bg-white rounded-xl p-3 shadow-lg border border-slate-100">
+                                                <div className="text-xs font-bold text-slate-900 mb-1">{p.name}</div>
+                                                <div className="text-[11px] text-slate-600">Tipo: {p.kind}</div>
+                                                <div className="text-[11px] text-slate-600">Faturamento bruto: {formatCurrency(Number(p.grossRevenue ?? 0))}</div>
+                                                <div className="text-[11px] text-slate-600">Margem: {formatCurrency(Number(p.margin ?? 0))}</div>
+                                                <div className="text-[11px] text-slate-600">Margem%: {(Number(p.marginPercent ?? 0)).toFixed(1)}%</div>
+                                            </div>
+                                        );
+                                    }}
+                                />
+                                <Scatter data={marginScatterData} fill="#6366f1" />
+                            </ScatterChart>
+                        </ResponsiveContainer>
+                    </div>
+                ) : (
+                    <div className="text-center text-slate-400 text-sm py-6">Sem dados suficientes para exibir o gráfico.</div>
+                )}
             </div>
             
              <div className="grid grid-cols-2 gap-6">

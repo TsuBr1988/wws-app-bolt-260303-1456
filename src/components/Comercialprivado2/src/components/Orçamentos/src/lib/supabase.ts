@@ -1,24 +1,15 @@
-import { createClient, type SupabaseClient } from '@supabase/supabase-js';
+import { createClient } from '@supabase/supabase-js';
+import { getDatabase } from '@/lib/databaseResolver';
 
-const supabaseUrl = import.meta.env.VITE_BUDGETS_SUPABASE_URL || import.meta.env.VITE_SUPABASE_URL;
-const supabaseAnonKey = import.meta.env.VITE_BUDGETS_SUPABASE_ANON_KEY || import.meta.env.VITE_SUPABASE_ANON_KEY;
+const budgetsUrl = import.meta.env.VITE_BUDGETS_SUPABASE_URL as string | undefined;
+const budgetsAnonKey = import.meta.env.VITE_BUDGETS_SUPABASE_ANON_KEY as string | undefined;
 
-if (!supabaseUrl || !supabaseAnonKey) {
-  throw new Error('Missing Budgets Supabase environment variables');
-}
+export const usingDedicatedBudgetsDb = Boolean(budgetsUrl && budgetsAnonKey);
 
-type GlobalSupabaseCache = {
-  __wwsSupabaseClients?: Record<string, SupabaseClient<any>>;
-};
+export const supabase = usingDedicatedBudgetsDb
+	? createClient(budgetsUrl!, budgetsAnonKey!)
+	: getDatabase('COMERCIAL');
 
-const globalCache = globalThis as unknown as GlobalSupabaseCache;
-const cacheKey = `orcamentos:${supabaseUrl}`;
-
-const cachedClient = globalCache.__wwsSupabaseClients?.[cacheKey] as SupabaseClient | undefined;
-
-export const supabase: SupabaseClient = cachedClient ?? createClient(supabaseUrl, supabaseAnonKey);
-
-if (import.meta.env.DEV) {
-  if (!globalCache.__wwsSupabaseClients) globalCache.__wwsSupabaseClients = {};
-  globalCache.__wwsSupabaseClients[cacheKey] = supabase;
+if (import.meta.env.DEV && !usingDedicatedBudgetsDb) {
+	console.warn('⚠️ Orçamentos usando banco GERAL por fallback. Defina VITE_BUDGETS_SUPABASE_URL e VITE_BUDGETS_SUPABASE_ANON_KEY para usar um banco dedicado de orçamentos.');
 }

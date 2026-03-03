@@ -848,13 +848,14 @@ const SimulationsTab: React.FC<SimulationsTabProps> = ({
                                             padding: '12px'
                                         }}
                                         labelStyle={{ color: '#1e293b', fontWeight: 'bold', marginBottom: '8px', fontSize: '13px' }}
-                                        formatter={(value: number, name: string) => {
+                                        formatter={(value, name) => {
                                             const labels: Record<string, string> = {
                                                 'inflows': 'Entradas',
                                                 'outflows': 'Saídas',
                                                 'balance': 'Saldo Projetado'
                                             };
-                                            return [formatCurrency(value), labels[name] || name];
+                                            const key = String(name ?? '');
+                                            return [formatCurrency(Number(value ?? 0)), labels[key] || key];
                                         }}
                                         labelFormatter={(label) => `Data: ${label}`}
                                     />
@@ -951,7 +952,7 @@ const SimulationsTab: React.FC<SimulationsTabProps> = ({
                                                         ))}
                                                     </Pie>
                                                     <Tooltip
-                                                        formatter={(value: number, name: string, props: any) => formatCurrency(props.payload.value)}
+                                                        formatter={(value, name, props: any) => formatCurrency(Number(props?.payload?.value ?? value ?? 0))}
                                                         contentStyle={{
                                                             borderRadius: '12px',
                                                             border: 'none',

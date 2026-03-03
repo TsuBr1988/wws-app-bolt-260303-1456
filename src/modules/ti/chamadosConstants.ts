@@ -24,6 +24,7 @@ export const CHAMADO_MODULOS = [
   'Qualidade',
   'Contratos',
   'Cultura',
+  'Marketing',
   'Atas e Ações',
   'TI',
 ] as const;

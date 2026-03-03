@@ -180,7 +180,13 @@ export const BenefitsManager = () => {
 
   const handleEdit = (benefit: ConfigBenefit) => {
     setEditingId(benefit.id!);
-    setFormData(benefit);
+    setFormData({
+      ...benefit,
+      base_value: Number.isFinite(Number(benefit.base_value)) ? Number(benefit.base_value) : 0,
+      order_index: benefit.order_index ?? 0,
+      formula: benefit.formula ?? '',
+      is_active: benefit.is_active ?? true,
+    });
     setFormulaWarnings([]);
   };
 
@@ -202,12 +208,17 @@ export const BenefitsManager = () => {
       formula: formData.calculation_type === 'formula' ? formData.formula : '',
     };
 
+    const baseValueToSave = (() => {
+      const n = Number(dataToSave.base_value ?? 0);
+      return Number.isFinite(n) ? n : 0;
+    })();
+
     if (isAdding) {
       const { error } = await supabase.from('config_benefits').insert({
         code: dataToSave.code.toUpperCase(),
         name: dataToSave.name,
         calculation_type: dataToSave.calculation_type,
-        base_value: dataToSave.base_value,
+        base_value: baseValueToSave,
         service_type: dataToSave.service_type,
         formula: dataToSave.formula,
         is_active: dataToSave.is_active,
@@ -225,7 +236,7 @@ export const BenefitsManager = () => {
         .update({
           name: dataToSave.name,
           calculation_type: dataToSave.calculation_type,
-          base_value: dataToSave.base_value,
+          base_value: baseValueToSave,
           formula: dataToSave.formula,
           is_active: dataToSave.is_active,
           order_index: dataToSave.order_index,
@@ -443,9 +454,12 @@ export const BenefitsManager = () => {
                   <input
                     type="number"
                     step="0.01"
-                    value={formData.base_value}
+                    value={Number.isFinite(Number(formData.base_value)) ? Number(formData.base_value) : 0}
                     onChange={(e) =>
-                      setFormData({ ...formData, base_value: parseFloat(e.target.value) })
+                      setFormData({
+                        ...formData,
+                        base_value: Number.isFinite(parseFloat(e.target.value)) ? parseFloat(e.target.value) : 0,
+                      })
                     }
                     className="w-24 px-2 py-1 border border-slate-300 rounded text-right text-xs"
                   />
@@ -573,9 +587,12 @@ export const BenefitsManager = () => {
                       <input
                         type="number"
                         step="0.01"
-                        value={formData.base_value}
+                        value={Number.isFinite(Number(formData.base_value)) ? Number(formData.base_value) : 0}
                         onChange={(e) =>
-                          setFormData({ ...formData, base_value: parseFloat(e.target.value) })
+                          setFormData({
+                            ...formData,
+                            base_value: Number.isFinite(parseFloat(e.target.value)) ? parseFloat(e.target.value) : 0,
+                          })
                         }
                         className="w-24 px-2 py-1 border border-slate-300 rounded text-right text-xs"
                       />
@@ -661,7 +678,7 @@ export const BenefitsManager = () => {
                       {benefit.calculation_type === 'formula' && 'Fórmula'}
                     </td>
                     <td className="px-3 py-2 text-right">
-                      {benefit.base_value.toLocaleString('pt-BR', {
+                      {Number(benefit.base_value ?? 0).toLocaleString('pt-BR', {
                         style: 'currency',
                         currency: 'BRL',
                       })}

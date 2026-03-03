@@ -31,6 +31,8 @@ export const LicitacaoForm: React.FC<LicitacaoFormProps> = ({ onSubmit, onCancel
         situacao: editingLicitacao.situacao,
         etapaMaxima: editingLicitacao.etapaMaxima,
         valorEstimado: editingLicitacao.valorEstimado,
+        margemLucro: editingLicitacao.margemLucro ?? '',
+        margemAdm: editingLicitacao.margemAdm ?? '',
         empresaVencedora: editingLicitacao.empresaVencedora,
         lanceVencedor: editingLicitacao.lanceVencedor,
         nossoLance: editingLicitacao.nossoLance,
@@ -58,6 +60,8 @@ export const LicitacaoForm: React.FC<LicitacaoFormProps> = ({ onSubmit, onCancel
         situacao: 'Aguardando' as const,
         etapaMaxima: 'Proposta' as const,
         valorEstimado: 0,
+        margemLucro: '',
+        margemAdm: '',
         empresaVencedora: '',
         lanceVencedor: 0,
         nossoLance: 0,
@@ -105,6 +109,8 @@ export const LicitacaoForm: React.FC<LicitacaoFormProps> = ({ onSubmit, onCancel
       dataHoraPregao: formData.dataHoraPregao ? convertLocalDateTimeToISOExact(formData.dataHoraPregao) : new Date().toISOString(),
       dataProximaAcao: formData.dataProximaAcao ? convertLocalDateTimeToISOExact(formData.dataProximaAcao) : undefined,
       valorEstimado: formData.valorEstimado || undefined,
+      margemLucro: formData.margemLucro === '' ? undefined : Number(formData.margemLucro),
+      margemAdm: formData.margemAdm === '' ? undefined : Number(formData.margemAdm),
       lanceVencedor: formData.lanceVencedor || undefined,
       nossoLance: formData.nossoLance || undefined,
       cidade: formData.cidade || undefined,
@@ -331,6 +337,38 @@ export const LicitacaoForm: React.FC<LicitacaoFormProps> = ({ onSubmit, onCancel
                 onChange={(e) => setFormData({ ...formData, valorEstimado: Number(e.target.value) || 0 })}
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500"
                 min="0"
+                step="0.01"
+                placeholder="Opcional"
+              />
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Margem de lucro (%)
+              </label>
+              <input
+                type="number"
+                value={formData.margemLucro}
+                onChange={(e) => setFormData({ ...formData, margemLucro: e.target.value === '' ? '' : Number(e.target.value) })}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500"
+                min="0"
+                max="100"
+                step="0.01"
+                placeholder="Opcional"
+              />
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Margem adm (%)
+              </label>
+              <input
+                type="number"
+                value={formData.margemAdm}
+                onChange={(e) => setFormData({ ...formData, margemAdm: e.target.value === '' ? '' : Number(e.target.value) })}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500"
+                min="0"
+                max="100"
                 step="0.01"
                 placeholder="Opcional"
               />

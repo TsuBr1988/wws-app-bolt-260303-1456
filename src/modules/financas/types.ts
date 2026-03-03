@@ -2,7 +2,7 @@
 export type Company = 'Worldwide Segurança' | 'WWS Services' | '2WS';
 export type BalancesByCompany = Record<Company, number>;
 export type FileType = 'pagar' | 'pagas' | 'receber' | 'recebidas';
-export type ViewState = 'files' | 'dashboard' | 'statement' | 'simulations' | 'contract_analysis' | 'coa' | 'budget' | 'kpis' | 'contract_sheets' | 'delinquent' | 'loans' | 'settings';
+export type ViewState = 'files' | 'dashboard' | 'statement' | 'simulations' | 'contract_analysis' | 'coa' | 'budget' | 'kpis' | 'contract_sheets' | 'delinquent' | 'loans' | 'administrative' | 'settings';
 export type CoaViewMode = 'cash' | 'accrual';
 export type CashSubView = 'all' | 'projected' | 'realized';
 export type ClientType = 'public' | 'private';
@@ -97,6 +97,7 @@ export interface ContractSheet {
     client_name: string;
     start_date: string;
     end_date: string;
+    expense_year?: string | null;
     termination_date?: string | null;
     created_at?: string;
     updated_at?: string;
@@ -109,7 +110,7 @@ export interface ContractSheetItem {
     category_code: string;
     category_name: string;
     budgeted_amount: number;
-    client_name: string;
+    client_name?: string;
 }
 
 export interface CategoriaDRE {

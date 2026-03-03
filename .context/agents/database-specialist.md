@@ -221,6 +221,37 @@ Service layer hot-spots:
 
 ---
 
+### 5) Multi-project Supabase / split schema troubleshooting
+**Goal:** avoid "phantom bugs" caused by querying the wrong Supabase project.
+
+Use this workflow when you see:
+- PostgREST 404s like `relation does not exist` / `Could not find the table`
+- HTTP 200 with `[]` where data is known to exist
+- Module works in one area (e.g. Comercial Privado) but fails in another (e.g. Oramentos)
+
+Steps:
+1. **Identify the module context**
+  - Confirm whether code path is `Comercialpublico2`, `Comercialprivado2`, `financas`, or a feature-local client.
+2. **Confirm which client is used**
+  - Prefer `getDatabase('<MODULE>')` via `src/lib/databaseResolver.ts`.
+  - Also check for feature-local clients (some features have their own `supabase.ts`).
+3. **Probe table existence**
+  - Minimal select against key tables (limit 1).
+  - If you get 404 with "relation does not exist", the schema is missing in that project.
+4. **Differentiate empty vs RLS**
+  - `200 []` can be real emptiness, filters, or RLS.
+  - Verify auth/session context and confirm policies for that table.
+5. **Choose a remediation path**
+  - Best: migrate/unify schema so the module's project is authoritative.
+  - Transitional: add a dedicated env client for the feature.
+  - Last-resort transitional: multi-source read detection + explicit UI guardrails.
+6. **Document**
+  - Record which tables exist in which project and the chosen resolution (including planned cleanup/migration).
+
+Reference: `.context/skills/supabase-multi-project/SKILL.md`
+
+---
+
 ## Codebase-Specific Best Practices (derived from repo structure)
 
 1. **Treat `src/types/database.ts` as the canonical schema contract**

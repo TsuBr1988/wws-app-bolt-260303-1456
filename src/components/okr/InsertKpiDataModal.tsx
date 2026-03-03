@@ -2,9 +2,11 @@ import { useState, useEffect } from 'react';
 import { X, Calendar, Save } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { supabase } from '@/lib/supabase';
+import { getDatabase } from '@/lib/databaseResolver';
 import { useToast } from '@/components/ui/use-toast';
 import { format } from 'date-fns';
+
+const supabase = getDatabase('RH');
 
 interface KPI {
   name: string;

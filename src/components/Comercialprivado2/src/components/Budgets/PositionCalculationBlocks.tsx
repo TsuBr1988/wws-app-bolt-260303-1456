@@ -33,6 +33,9 @@ interface CalculationState {
   // Bloco 1: Composição de salário
   salaryBase: number;
   nightShift: boolean;
+  nightAdditionalPercent: number; // % Adicional Noturno (padrão 20%)
+  hoursPerDay: number; // Horas por dia
+  reducedHourPercent: number; // % Hora Reduzida (padrão 14.2857%)
   additionalNight: number;
   extraNightHour: number;
   salaryAdditionsTotal: number;
@@ -59,6 +62,7 @@ interface CalculationState {
 
   // Bloco 6: Intrajornada
   hasIntrajornada: boolean;
+  intrajornadaPercent: number;
   intrajornadaValue: number;
   block6Total: number;
 
@@ -105,6 +109,9 @@ export const PositionCalculationBlocks: React.FC<PositionCalculationBlocksProps>
     // Bloco 1
     salaryBase: 0,
     nightShift: false,
+    nightAdditionalPercent: 20.0, // 20% padrão
+    hoursPerDay: 8.0, // 8 horas padrão
+    reducedHourPercent: 14.2857, // ~14.29% padrão
     additionalNight: 0,
     extraNightHour: 0,
     salaryAdditionsTotal: 0,
@@ -131,6 +138,7 @@ export const PositionCalculationBlocks: React.FC<PositionCalculationBlocksProps>
 
     // Bloco 6
     hasIntrajornada: false,
+    intrajornadaPercent: 50.0, // 50% padrão
     intrajornadaValue: 0,
     block6Total: 0,
 
@@ -197,7 +205,7 @@ export const PositionCalculationBlocks: React.FC<PositionCalculationBlocksProps>
     const isNightShift = formData.turno === 'Noturno'; // Usa o campo 'turno' diretamente
 
     // Bloco 1: Composição de salário
-    const block1 = calculateBlock1(salaryBase, quantity, workingDays, isNightShift);
+    const block1 = calculateBlock1(salaryBase, quantity, workingDays, vrDays, isNightShift);
 
     // Bloco 2: Encargos sociais
     const block2 = calculateBlock2(block1.total);
@@ -241,6 +249,7 @@ export const PositionCalculationBlocks: React.FC<PositionCalculationBlocksProps>
       block5Total: block5.total,
       
       hasIntrajornada: calculations.hasIntrajornada,
+      intrajornadaPercent: calculations.intrajornadaPercent,
       intrajornadaValue: block6.intrajornadaValue,
       block6Total: block6.total,
       
@@ -253,7 +262,7 @@ export const PositionCalculationBlocks: React.FC<PositionCalculationBlocksProps>
     }));
   };
 
-  const calculateBlock1 = (salaryBase: number, quantity: number, workingDays: number, isNightShift: boolean) => {
+  const calculateBlock1 = (salaryBase: number, quantity: number, workingDays: number, vrDays: number, isNightShift: boolean) => {
     // Salário base
     const baseSalaryTotal = salaryBase * quantity;
     
@@ -262,11 +271,11 @@ export const PositionCalculationBlocks: React.FC<PositionCalculationBlocksProps>
     let extraNightHour = 0;
     
     if (isNightShift) {
-      // Adicional noturno: dias * 8 * salario_base / 220 * 0.2
-      additionalNight = workingDays * 8 * salaryBase / 220 * 0.2 * quantity;
+      // Adicional noturno: (Salário Base/220) * % Adicional Noturno * q * Horas/Dia
+      additionalNight = (salaryBase / 220) * (calculations.nightAdditionalPercent / 100) * quantity * calculations.hoursPerDay;
       
-      // Hora noturna adicional: dias * salario_base / 220 * 1.2
-      extraNightHour = workingDays * salaryBase / 220 * 1.2 * quantity;
+      // Hora noturna adicional: (Salário Base/220) * (% Hora Reduzida * q)
+      extraNightHour = (salaryBase / 220) * (calculations.reducedHourPercent / 100 * quantity);
     }
     
     // Adicionais salariais opcionais
@@ -322,11 +331,10 @@ export const PositionCalculationBlocks: React.FC<PositionCalculationBlocksProps>
     // VA: Mesmo cálculo do VR (sem desconto)
     const vaTotal = calculations.vaValue * quantity * vrDays;
 
-    // VT: (Valor × quantidade × dias_por_colaborador × 2_viagens) - (8% × salário_base × quantidade)
-    // Usa vrDays porque cada pessoa trabalha vrDays, mas vai e volta (×2)
-    const vtBruto = calculations.vtValue * quantity * vrDays * 2;
-    const vtDesconto = 0.08 * salaryBase * quantity;
-    const vtTotal = Math.max(0, vtBruto - vtDesconto);
+    // VT: [(Valor × dias × 2) - (6% × salário)] × quantidade
+    // vtDays = dias de transporte, multiplica por 2 para ida e volta
+    const vtPorFuncionario = (calculations.vtValue * vtDays * 2) - (0.06 * salaryBase);
+    const vtTotal = Math.max(0, vtPorFuncionario * quantity);
 
     const benefitsTotal = vtTotal + vrTotal + vaTotal;
 
@@ -362,8 +370,9 @@ export const PositionCalculationBlocks: React.FC<PositionCalculationBlocksProps>
     let intrajornadaValue = 0;
     
     if (calculations.hasIntrajornada) {
-      // Fórmula: quantidade * (salário_base / 220 * 1.5)
-      intrajornadaValue = quantity * (salaryBase / 220 * 1.5);
+      // Fórmula: (salário_base / 220) * (1 + (% reposição / 100)) * quantidade
+      const percentMultiplier = 1 + (calculations.intrajornadaPercent / 100);
+      intrajornadaValue = (salaryBase / 220) * percentMultiplier * quantity;
     }
     
     return {
@@ -476,13 +485,62 @@ export const PositionCalculationBlocks: React.FC<PositionCalculationBlocksProps>
             
             {calculations.nightShift && (
               <>
+                <div className="p-3 bg-blue-50 border border-blue-200 rounded space-y-3">
+                  <div className="flex justify-between items-center">
+                    <span className="text-xs font-semibold">% Adicional Noturno:</span>
+                    <div className="flex items-center space-x-2">
+                      <input
+                        type="number"
+                        value={calculations.nightAdditionalPercent}
+                        onChange={(e) => setCalculations(prev => ({ ...prev, nightAdditionalPercent: parseFloat(e.target.value) || 0 }))}
+                        className="w-20 px-2 py-1 border border-gray-300 rounded text-right text-xs"
+                        step="0.1"
+                      />
+                      <span className="text-xs">%</span>
+                    </div>
+                  </div>
+                  <div className="flex justify-between items-center">
+                    <span className="text-xs font-semibold">Horas/Dia:</span>
+                    <div className="flex items-center space-x-2">
+                      <input
+                        type="number"
+                        value={calculations.hoursPerDay}
+                        onChange={(e) => setCalculations(prev => ({ ...prev, hoursPerDay: parseFloat(e.target.value) || 0 }))}
+                        className="w-20 px-2 py-1 border border-gray-300 rounded text-right text-xs"
+                        step="0.5"
+                      />
+                      <span className="text-xs">h</span>
+                    </div>
+                  </div>
+                  <div className="flex justify-between items-center">
+                    <span className="text-xs font-semibold">% Hora Reduzida:</span>
+                    <div className="flex items-center space-x-2">
+                      <input
+                        type="number"
+                        value={calculations.reducedHourPercent}
+                        onChange={(e) => setCalculations(prev => ({ ...prev, reducedHourPercent: parseFloat(e.target.value) || 0 }))}
+                        className="w-20 px-2 py-1 border border-gray-300 rounded text-right text-xs"
+                        step="0.0001"
+                      />
+                      <span className="text-xs">%</span>
+                    </div>
+                  </div>
+                </div>
+                
                 <div className="flex justify-between">
-                  <span>Adicional noturno (20%):</span>
+                  <span>Adicional noturno ({calculations.nightAdditionalPercent}%):</span>
                   <span className="font-medium">{formatCurrency(calculations.additionalNight)}</span>
                 </div>
+                <div className="text-xs text-gray-600 bg-amber-50 p-2 rounded">
+                  <strong>Fórmula:</strong> ({selectedJobRole?.salary_base} ÷ 220) × {calculations.nightAdditionalPercent}% × {selectedScale?.people_quantity} × {calculations.hoursPerDay}h
+                </div>
+                
                 <div className="flex justify-between">
                   <span>Hora noturna adicional:</span>
                   <span className="font-medium">{formatCurrency(calculations.extraNightHour)}</span>
+                </div>
+                <div className="text-xs text-gray-600 bg-amber-50 p-2 rounded">
+                  <strong>Fórmula:</strong> ({selectedJobRole?.salary_base} ÷ 220) × ({calculations.reducedHourPercent}% × {selectedScale?.people_quantity})
                 </div>
               </>
             )}
@@ -710,9 +768,24 @@ export const PositionCalculationBlocks: React.FC<PositionCalculationBlocksProps>
             </div>
             
             {calculations.hasIntrajornada && (
-              <div className="text-xs text-gray-600 bg-blue-50 p-2 rounded">
-                <strong>Fórmula:</strong> {selectedScale?.people_quantity} × ({selectedJobRole?.salary_base} ÷ 220 × 1,5)
-              </div>
+              <>
+                <div className="flex justify-between items-center">
+                  <span>% Custo de Reposição:</span>
+                  <div className="flex items-center space-x-2">
+                    <input
+                      type="number"
+                      value={calculations.intrajornadaPercent}
+                      onChange={(e) => setCalculations(prev => ({ ...prev, intrajornadaPercent: parseFloat(e.target.value) || 0 }))}
+                      className="w-20 px-2 py-1 border border-gray-300 rounded text-right"
+                      step="0.1"
+                    />
+                    <span className="text-sm">%</span>
+                  </div>
+                </div>
+                <div className="text-xs text-gray-600 bg-blue-50 p-2 rounded">
+                  <strong>Fórmula:</strong> ({selectedJobRole?.salary_base} ÷ 220) × (1 + {calculations.intrajornadaPercent}%) × {selectedScale?.people_quantity} pessoas
+                </div>
+              </>
             )}
             
             <div className="border-t pt-2 flex justify-between font-bold text-indigo-600">

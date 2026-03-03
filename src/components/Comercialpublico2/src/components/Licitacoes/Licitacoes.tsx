@@ -80,7 +80,7 @@ export const Licitacoes: React.FC<LicitacoesProps> = ({ onDataChange }) => {
           data_pregao, lance_vencedor, nosso_lance, empresa_vencedora, percentual_vencedor,
           percentual_nosso_lance, promotor_id, orcamentista_id, status_planilha,
           posicao_atual, etapa_maxima, data_assinatura, notes, observacao_proxima_acao,
-          proxima_acao_texto, empresa, nao_gera_comissao, nao_conta_meta_comercial, created_at, updated_at
+          proxima_acao_texto, empresa, margem_lucro, margem_adm, nao_gera_comissao, nao_conta_meta_comercial, created_at, updated_at
         `)
         .eq('department', selectedDepartment)
         .order('created_at', { ascending: false })
@@ -229,6 +229,8 @@ export const Licitacoes: React.FC<LicitacoesProps> = ({ onDataChange }) => {
         situacao: p.status, // USAR STATUS DIRETO DO BANCO (sem mapeamento)
         etapaMaxima: p.etapa_maxima || 'Proposta',
         valorEstimado: p.total_value || 0,
+        margemLucro: p.margem_lucro ?? undefined,
+        margemAdm: p.margem_adm ?? undefined,
         empresaVencedora: p.empresa_vencedora,
         lanceVencedor: p.lance_vencedor,
         percentualVencedor: p.percentual_vencedor,
@@ -446,6 +448,8 @@ export const Licitacoes: React.FC<LicitacoesProps> = ({ onDataChange }) => {
         monthly_value: licitacaoData.valorEstimado ? licitacaoData.valorEstimado / (licitacaoData.months || 12) : 0,
         months: licitacaoData.months || 12,
         total_value: licitacaoData.valorEstimado || 0,
+        ...(licitacaoData.margemLucro !== undefined ? { margem_lucro: licitacaoData.margemLucro } : {}),
+        ...(licitacaoData.margemAdm !== undefined ? { margem_adm: licitacaoData.margemAdm } : {}),
         status: licitacaoData.situacao, // SALVAR DIRETO SEM MAPEAMENTO
         commission: 0,
         closer_id: licitacaoData.licitanteId,
@@ -475,7 +479,24 @@ export const Licitacoes: React.FC<LicitacoesProps> = ({ onDataChange }) => {
         // EDITANDO LICITAÇÃO EXISTENTE
         console.log('✏️ [Licitacoes] Atualizando licitação existente:', editingLicitacao.id, dataToInsert);
         
-        await updateProposal(editingLicitacao.id, dataToInsert);
+        try {
+          await updateProposal(editingLicitacao.id, dataToInsert);
+        } catch (error) {
+          const message = error instanceof Error ? error.message : String(error);
+          const isMissingMarginColumn =
+            message.includes('margem_lucro') || message.includes('margem_adm') || message.includes('column') || message.includes('does not exist');
+
+          if (!isMissingMarginColumn) throw error;
+
+          const retryPayload = { ...dataToInsert } as any;
+          delete retryPayload.margem_lucro;
+          delete retryPayload.margem_adm;
+          await updateProposal(editingLicitacao.id, retryPayload);
+
+          alert(
+            '⚠️ As colunas de margem ainda não existem no banco deste ambiente. A licitação foi salva sem as margens. Aplique a migration do Supabase para habilitar este campo.'
+          );
+        }
         
         // Buscar proposta atualizada
         const { data: updatedProposal, error } = await supabase
@@ -494,7 +515,24 @@ export const Licitacoes: React.FC<LicitacoesProps> = ({ onDataChange }) => {
         // CRIANDO NOVA LICITAÇÃO
         console.log('🚀 [Licitacoes] Criando nova licitação:', dataToInsert);
         
-        await insertProposal(dataToInsert);
+        try {
+          await insertProposal(dataToInsert);
+        } catch (error) {
+          const message = error instanceof Error ? error.message : String(error);
+          const isMissingMarginColumn =
+            message.includes('margem_lucro') || message.includes('margem_adm') || message.includes('column') || message.includes('does not exist');
+
+          if (!isMissingMarginColumn) throw error;
+
+          const retryPayload = { ...dataToInsert } as any;
+          delete retryPayload.margem_lucro;
+          delete retryPayload.margem_adm;
+          await insertProposal(retryPayload);
+
+          alert(
+            '⚠️ As colunas de margem ainda não existem no banco deste ambiente. A licitação foi criada sem as margens. Aplique a migration do Supabase para habilitar este campo.'
+          );
+        }
         
         // Buscar a proposta recém-criada
         const { data: newProposal, error } = await supabase

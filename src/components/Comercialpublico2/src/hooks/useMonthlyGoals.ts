@@ -68,7 +68,7 @@ export function useMonthlyGoals() {
       }));
       
       setMonthlyGoals(defaultGoals);
-      setError('❌ Erro crítico: Verifique se o arquivo .env existe e contém VITE_SUPABASE_URL e VITE_SUPABASE_ANON_KEY válidos');
+      setError('❌ Erro crítico: Verifique se o arquivo .env existe e contém VITE_SUPABASE_COMERCIAL_PUBLICO_URL e VITE_SUPABASE_COMERCIAL_PUBLICO_ANON válidos');
     } finally {
       setLoading(false);
     }

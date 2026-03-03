@@ -19,11 +19,13 @@ export const TABELA_SALARIAL: SalaryTable = {
 };
 
 export const ESCALAS: Scales = {
-  S_SEXTA_44: { nome: '2ª a 6ª (44h)', dias: 22, multiplier: 1.0, vrDays: 22, vtDays: 44 },
-  S_SABADO_44: { nome: '2ª a Sábado (44h)', dias: 25, multiplier: 1.0, vrDays: 25, vtDays: 50 },
-  S_SEXTA_12: { nome: '2ª a 6ª (12h Diária)', dias: 22, multiplier: 1.37, vrDays: 22, vtDays: 44 },
-  S_DOMINGO_8: { nome: '2ª a Domingo (8h Diária)', dias: 31, multiplier: 1.37, vrDays: 31, vtDays: 62 },
-  S_DOMINGO_12D: { nome: 'Escala 12x36', dias: 31, multiplier: 2.0, vrDays: 15.5, vtDays: 31 },
+  S_SEXTA_44: { nome: '2ª a 6ª (44h)', dias: 22, multiplier: 1.0, vrDays: 22, vtDays: 22 },
+  S_SABADO_44: { nome: '2ª a Sábado (44h)', dias: 25, multiplier: 1.0, vrDays: 25, vtDays: 25 },
+  S_SEXTA_12: { nome: '2ª a 6ª (12h Diária)', dias: 22, multiplier: 1.37, vrDays: 22, vtDays: 22 },
+  S_DOMINGO_8: { nome: '2ª a Domingo (8h Diária)', dias: 31, multiplier: 1.37, vrDays: 31, vtDays: 31 },
+  S_DOMINGO_12D: { nome: 'Escala 12x36', dias: 31, multiplier: 2.0, vrDays: 15.5, vtDays: 15.5 },
+  '12x36': { nome: 'Escala 12x36', dias: 31, multiplier: 2.0, vrDays: 15.5, vtDays: 15.5 }, // Alias para S_DOMINGO_12D
+  S_DIARIA: { nome: 'Diária', dias: 1, multiplier: 0.05, vrDays: 1, vtDays: 1 },
 };
 
 export const FUNCOES = [

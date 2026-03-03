@@ -4,7 +4,7 @@ import { SupabaseClient } from '@supabase/supabase-js';
 import { ContractSheet } from '../../../types';
 import { formatCurrency } from '../../../utils';
 import { format } from 'date-fns';
-import ptBR from 'date-fns/locale/pt-BR';
+import { ptBR } from 'date-fns/locale/pt-BR';
 
 interface Addendum {
     id: string;
@@ -91,7 +91,7 @@ export const SheetAddendumViewModal: React.FC<SheetAddendumViewModalProps> = ({
     };
 
     const getOriginalAmount = (categoryCode: string): number => {
-        const item = sheet.items.find(i => i.category_code === categoryCode);
+        const item = (sheet.items ?? []).find(i => i.category_code === categoryCode);
         return item?.budgeted_amount || 0;
     };
 
@@ -205,7 +205,7 @@ export const SheetAddendumViewModal: React.FC<SheetAddendumViewModalProps> = ({
                                     <div>
                                         <span className="text-blue-700">Total Orçado:</span>
                                         <span className="ml-2 font-semibold text-blue-900">
-                                            {formatCurrency(sheet.items.reduce((sum, item) => sum + item.budgeted_amount, 0))}
+                                            {formatCurrency((sheet.items ?? []).reduce((sum, item) => sum + item.budgeted_amount, 0))}
                                         </span>
                                     </div>
                                 </div>

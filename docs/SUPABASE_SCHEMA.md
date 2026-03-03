@@ -41,3 +41,68 @@ Registre decisões e exceções em [DECISIONS.md](DECISIONS.md).
 ## Observação do template
 - A página `/configuracoes` funciona mesmo sem essas tabelas, mas vai mostrar mensagens de erro/status.
 - Para gestão de usuários/roles, é necessário `SUPABASE_SERVICE_ROLE_KEY` (server-side).
+
+---
+
+# Permissões do app (WWS)
+
+Este projeto usa um modelo de permissões “client-side” (login via `app_users`) com duas tabelas no banco do módulo `RH`:
+
+## 1) user_permissions
+Controla **acesso a páginas/abas** (nível booleano).
+
+- Tabela: `public.user_permissions`
+- Campos usados no app:
+  - `user_id` (uuid/text, conforme o seu schema)
+  - `page` (text)
+  - `can_view` (boolean)
+
+Exemplo (dar acesso à aba Marketing):
+
+```sql
+insert into public.user_permissions (user_id, page, can_view)
+values ('<USER_ID>', 'marketing', true)
+on conflict do nothing;
+```
+
+## 2) user_indicator_permissions
+Controla permissões em formato **Não visualizar / Observar / Editar**.
+
+- Tabela: `public.user_indicator_permissions`
+- Campos usados no app:
+  - `user_id`
+  - `page` (text)
+  - `indicator_name` (text)
+  - `permission_level` (text: `none` | `view` | `edit`)
+
+### Marketing (matriz)
+As permissões do Marketing são geridas pela matriz em Configurações → Usuários → Gerenciar Permissões, no grupo `page = 'marketing'`.
+
+Linhas (indicator_name) usadas atualmente:
+- `Marketing`
+- `Marketing > Solicitações`
+- `Marketing > Comparativo de Plataformas`
+- `Marketing > Planejamento`
+- `Marketing > Tarefas`
+- `Marketing > Atas`
+- `Solicitações - Pedir`
+- `Solicitações - Editar`
+- `Atas - Pedir`
+- `Atas - Editar`
+- `Tarefas - Pedir`
+- `Tarefas - Editar`
+
+Exemplo (permitir abrir Solicitações e editar):
+
+```sql
+insert into public.user_indicator_permissions (user_id, page, indicator_name, permission_level)
+values
+  ('<USER_ID>', 'marketing', 'Marketing', 'view'),
+  ('<USER_ID>', 'marketing', 'Marketing > Solicitações', 'view'),
+  ('<USER_ID>', 'marketing', 'Solicitações - Pedir', 'view'),
+  ('<USER_ID>', 'marketing', 'Solicitações - Editar', 'edit')
+on conflict (user_id, page, indicator_name)
+do update set permission_level = excluded.permission_level;
+```
+
+Observação: o app também mantém compatibilidade com o legado `public.marketing_roles` para gestão de Solicitações, mas o caminho oficial é a matriz acima.

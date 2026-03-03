@@ -17,7 +17,7 @@ interface SeveranceChartData {
   }>;
 }
 
-const CustomTooltip = ({ active, payload }: TooltipProps<number, string>) => {
+const CustomTooltip = ({ active, payload }: any) => {
   if (!active || !payload?.[0]) return null;
 
   const data = payload[0].payload as SeveranceChartData;

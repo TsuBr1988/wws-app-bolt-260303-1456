@@ -1,5 +1,5 @@
 import React, { useMemo, useState, useEffect } from 'react';
-import { supabase } from '@/lib/supabase';
+import { getDatabase } from '@/lib/databaseResolver';
 import { Chamado } from '../types';
 import { Plus, Ticket, CheckCircle2, Clock, AlertCircle, Search, Filter, LayoutList, LayoutGrid, Eye, Pencil, Trash2, ArrowUpDown, ChevronDown, ChevronUp } from 'lucide-react';
 import { differenceInHours, format } from 'date-fns';
@@ -7,6 +7,8 @@ import { ptBR } from 'date-fns/locale';
 import AbrirChamadoModal from './AbrirChamadoModal';
 import VerChamadoModal from './VerChamadoModal';
 import EditarChamadoModal from './EditarChamadoModal';
+
+const supabase = getDatabase('OPERACIONAL');
 
 const ChamadosTab: React.FC = () => {
   const [chamados, setChamados] = useState<Chamado[]>([]);
@@ -98,7 +100,7 @@ const ChamadosTab: React.FC = () => {
 
       const nowIso = new Date().toISOString();
 
-      const updatePayload: Partial<Chamado> & { data_conclusao?: string | null; data_inicio?: string | null } = {
+      const updatePayload: Partial<Omit<Chamado, 'data_conclusao' | 'data_inicio'>> & { data_conclusao?: string | null; data_inicio?: string | null } = {
         status: novoStatus,
       };
 

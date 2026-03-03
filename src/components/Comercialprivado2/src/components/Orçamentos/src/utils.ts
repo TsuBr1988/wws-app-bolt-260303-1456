@@ -319,7 +319,8 @@ export const calculateBenefitValueWithOverride = async (
   q: number,
   vtDays: number = 62,
   vrDays: number = 22,
-  salarioBase: number = 0
+  salarioBase: number = 0,
+  escalaKey?: string
 ): Promise<number> => {
   const isVT = benefit.code === 'VT' || benefit.name.toLowerCase().includes('vale transporte');
 
@@ -333,7 +334,7 @@ export const calculateBenefitValueWithOverride = async (
   }
 
   if (!budgetId) {
-    const result = calculateBenefitValue(benefit, vtU, diasU, q, vtDays, vrDays, salarioBase);
+    const result = calculateBenefitValue(benefit, vtU, diasU, q, vtDays, vrDays, salarioBase, escalaKey);
     if (isVT) console.log('Sem budgetId - resultado:', result);
     return result;
   }
@@ -376,7 +377,7 @@ export const calculateBenefitValueWithOverride = async (
       } catch (error) {
         console.error('Erro ao calcular fórmula customizada:', benefit.name, 'Fórmula:', override.custom_formula, 'Erro:', error);
         console.error('Valores: vtU=', vtU, 'diasU=', diasU, 'q=', q, 'vtDays=', vtDays, 'vrDays=', vrDays, 'salarioBase=', salarioBase);
-        return calculateBenefitValue(benefit, vtU, diasU, q, vtDays, vrDays, salarioBase);
+        return calculateBenefitValue(benefit, vtU, diasU, q, vtDays, vrDays, salarioBase, escalaKey);
       }
     }
 
@@ -388,23 +389,24 @@ export const calculateBenefitValueWithOverride = async (
         console.log('Chamando calculateBenefitValue com vtU=', override.custom_value);
       }
 
-      const result = calculateBenefitValue(benefit, override.custom_value, diasU, q, vtDays, vrDays, salarioBase);
+      const result = calculateBenefitValue(benefit, override.custom_value, diasU, q, vtDays, vrDays, salarioBase, escalaKey);
 
       if (isVT) console.log('Resultado com vtU customizado:', result);
       return result;
     }
 
     // Para outros tipos de benefícios, calcular o ratio e aplicar
-    const baseValue = calculateBenefitValue(benefit, vtU, diasU, q, vtDays, vrDays, salarioBase);
-    if (benefit.base_value !== 0) {
-      const ratio = baseValue / Number(benefit.base_value);
+    const baseValue = calculateBenefitValue(benefit, vtU, diasU, q, vtDays, vrDays, salarioBase, escalaKey);
+    const benefitBase = Number(benefit.base_value ?? 0);
+    if (benefitBase !== 0) {
+      const ratio = baseValue / benefitBase;
       return override.custom_value * ratio;
     }
 
     return override.custom_value * q;
   }
 
-  const result = calculateBenefitValue(benefit, vtU, diasU, q, vtDays, vrDays, salarioBase);
+  const result = calculateBenefitValue(benefit, vtU, diasU, q, vtDays, vrDays, salarioBase, escalaKey);
   if (isVT) console.log('Sem override - resultado:', result);
   return result;
 };
@@ -416,7 +418,8 @@ export const calculateBenefitValue = (
   q: number,
   vtDays: number = 62,
   vrDays: number = 22,
-  salarioBase: number = 0
+  salarioBase: number = 0,
+  escalaKey?: string
 ): number => {
   const isVT = benefit.code === 'VT' ||
                benefit.code === 'VALE_TRANSPORTE' ||
@@ -453,13 +456,13 @@ export const calculateBenefitValue = (
         console.log('  formula:', formula);
         console.log('  Variáveis no escopo do eval:');
         console.log('    vtU:', vtU);
-        console.log('    vrDays:', vrDays);
+        console.log('    vtDays:', vtDays);
         console.log('    q:', q);
         console.log('    s:', s);
-        console.log('  Calculando: (', vtU, '* 2 *', vrDays, '*', q, ') - (0.06 *', s, '*', q, ')');
-        const bruto = vtU * 2 * vrDays * q;
-        const desconto = 0.06 * s * q;
-        console.log('  Bruto:', bruto, '| Desconto:', desconto, '| Diferença:', bruto - desconto);
+        console.log('  Calculando: ((', vtDays, '* 2 *', vtU, ') - (0.06 *', s, ')) *', q);
+        const bruto = vtDays * 2 * vtU;
+        const desconto = 0.06 * s;
+        console.log('  Bruto por funcionário:', bruto, '| Desconto por funcionário:', desconto, '| Líquido por func:', bruto - desconto, '| Total (x', q, '):', (bruto - desconto) * q);
       }
 
       if (isPPR) {
@@ -523,25 +526,52 @@ export const calculateBenefitValue = (
                                 benefit.code.toLowerCase().includes('vr');
 
       if (isTransportBenefit) {
-        // VT: (vtU × 2 × vrDays × q) - (6% × salário × q)
+        // VT: Quantidade × dias úteis × Valor VT Unitário × 2
         // Usar vtU que vem da função ao invés de base_value
         if (isVT) {
           console.log('  📦 USANDO LÓGICA per_day (fallback)');
           console.log('  Usando vtU=', vtU, 'ao invés de base_value=', benefit.base_value);
         }
 
-        const vtBruto = vtU * 2 * vrDays * q;
-        const vtDesconto = 0.06 * salarioBase * q;
-        const resultado = Math.max(0, vtBruto - vtDesconto);
+        // CORREÇÃO ESPECIAL PARA ESCALA DIÁRIA (S_DIARIA)
+        if (escalaKey === 'S_DIARIA') {
+          // VT Diária: ((vtDays × 2 × vtU) - (6% × salárioBase × 0.05)) [APENAS 1 DIÁRIA, NÃO MULTIPLICA POR Q]
+          // vtDays = 1 para diária, 0.05 é o multiplier proporcional da diária
+          const vtBruto = vtDays * 2 * vtU;
+          const vtDesconto = 0.06 * salarioBase * 0.05;
+          const resultado = Math.max(0, vtBruto - vtDesconto);
+          
+          if (isVT) {
+            console.log('  🎯 ESCALA DIÁRIA - VT: ((', vtDays, '× 2 ×', vtU, ') - (0.06 ×', salarioBase, '× 0.05)) =', resultado);
+          }
+          
+          return resultado;
+        }
+
+        // VT Normal: [(Valor × dias × 2) - (6% × salário)] × quantidade
+        // vtDays = dias de transporte, multiplica por 2 para ida e volta
+        const vtPorFuncionario = (vtU * vtDays * 2) - (0.06 * salarioBase);
+        const resultado = Math.max(0, vtPorFuncionario * q);
 
         if (isVT) {
-          console.log('  vtBruto:', vtBruto, '| vtDesconto:', vtDesconto, '| resultado:', resultado);
+          console.log('  VT Normal: ((', vtDays, '× 2 ×', vtU, ') - (0.06 ×', salarioBase, ')) ×', q, '=', resultado);
         }
 
         return resultado;
       } else if (isRefeicaoBenefit) {
-        // VR: Valor × q × vrDays
-        return Number(benefit.base_value) * q * vrDays;
+        // CORREÇÃO ESPECIAL PARA ESCALA DIÁRIA (S_DIARIA)
+        if (escalaKey === 'S_DIARIA') {
+          // VR Diária: Valor × 1 [APENAS 1 DIÁRIA, NÃO MULTIPLICA POR Q]
+          const resultado = Number(benefit.base_value) * 1;
+          
+          if (isVT) {
+            console.log('  🎯 ESCALA DIÁRIA - VR:', benefit.base_value, '× 1 =', resultado);
+          }
+          
+          return resultado;
+        }
+        // VR Normal: Quantidade × dias úteis × Valor VR
+        return q * vrDays * Number(benefit.base_value);
       } else {
         // Outros benefícios diários
         return Number(benefit.base_value) * vrDays * q;
@@ -586,12 +616,15 @@ export const calcularFuncao = (
   let vNot = 0;
   let vRed = 0;
 
+  // Para escala diária, não usar vrDays nos cálculos de adicionais
+  const diasParaCalculos = funcao.escala === 'S_DIARIA' ? 1 : vrDays;
+
   if (funcao.horarioTipo === 'noturno') {
     const h = funcao.horas;
     const pN = funcao.notPerc / 100;
     const pR = funcao.horaNotAd / 100;
-    vNot = (((s + vPeric) * pN) / 220) * (vrDays * h) ;
-    vRed = (((s + vPeric) * pR) / 220) * ((vrDays * h) / 7);
+    vNot = (((s + vPeric) * pN) / 220) * (diasParaCalculos * h) ;
+    vRed = (((s + vPeric) * pR) / 220) * ((diasParaCalculos * h) / 7);
   }
 
   const somaRemunUnit = s + vPeric + vInsal + vNot + vRed + vGrat;
@@ -599,14 +632,14 @@ export const calcularFuncao = (
   let vIntra = 0;
   if (funcao.hasIntra === 'sim') {
     const pIntra = funcao.intraPerc / 100;
-    vIntra = (somaRemunUnit / 220) * vrDays * (1 + pIntra);
+    vIntra = (somaRemunUnit / 220) * diasParaCalculos * (1 + pIntra);
   }
 
   const quantidadeEfetiva = q * multiplier;
 
   const beneficios: Benefit[] = configBenefits.map((benefit) => ({
     d: benefit.name,
-    v: calculateBenefitValue(benefit, vtU, diasU, quantidadeEfetiva, vtDays, vrDays, s),
+    v: calculateBenefitValue(benefit, vtU, diasU, quantidadeEfetiva, vtDays, vrDays, s, funcao.escala),
   }));
 
   let materiaisValor = 0;
@@ -703,7 +736,7 @@ export const calcularFuncaoComOverrides = async (
   const beneficiosWithOverrides: Benefit[] = [];
   for (const benefit of configBenefits) {
     const value = await calculateBenefitValueWithOverride(
-      benefit, budgetId, funcao.id, vtU, diasU, quantidadeEfetiva, vtDays, vrDays, s
+      benefit, budgetId, funcao.id, vtU, diasU, quantidadeEfetiva, vtDays, vrDays, s, funcao.escala
     );
     beneficiosWithOverrides.push({ d: benefit.name, v: value });
   }

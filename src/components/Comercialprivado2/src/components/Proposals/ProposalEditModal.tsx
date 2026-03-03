@@ -25,8 +25,20 @@ export const ProposalEditModal: React.FC<ProposalEditModalProps> = ({
   const { data: employees = [] } = useSupabaseQuery('employees');
   const { isAdministrative } = useSystemVersion();
   const [isDeleting, setIsDeleting] = useState(false);
+
+  const EMPRESA_OPTIONS = ['WWS', 'Worldwide', '2WS'] as const;
+
+  const FAMILY_OPTIONS = [
+    'Shopping',
+    'Saúde',
+    'Múltiplos pontos (Varejo)',
+    'Indústria',
+    'Condomínio',
+    'Aeroportos',
+  ];
   
   const [formData, setFormData] = useState({
+    empresa: proposal.empresa || '',
     client: proposal.client,
     monthlyValue: proposal.monthlyValue,
     months: proposal.months,
@@ -34,6 +46,7 @@ export const ProposalEditModal: React.FC<ProposalEditModalProps> = ({
     closerId: proposal.closerId,
     sdrId: proposal.sdrId || '',
     proposalDate: formatDateForInput(proposal.createdAt), // Usar a data atual da proposta
+    familia: proposal.familia || '',
     closingDate: formatDateForInput(proposal.closingDate),
     lostDate: formatDateForInput(proposal.lostDate),
     lostReason: proposal.lostReason || 'Fechou com concorrente'
@@ -66,6 +79,7 @@ export const ProposalEditModal: React.FC<ProposalEditModalProps> = ({
     
     const updatedProposal: Proposal = {
       ...proposal,
+      empresa: formData.empresa || undefined,
       client: formData.client,
       monthlyValue: formData.monthlyValue,
       months: formData.months,
@@ -75,6 +89,7 @@ export const ProposalEditModal: React.FC<ProposalEditModalProps> = ({
       commissionRate: rate,
       closerId: formData.closerId,
       sdrId: formData.sdrId || undefined,
+      familia: formData.familia || undefined,
       proposalDate: formData.proposalDate,
       closingDate: formData.status === 'Fechado' ? formatTimestampForDb(formData.closingDate) : null,
       lostDate: formData.status === 'Perdido' ? formatTimestampForDb(formData.lostDate) : null,
@@ -178,6 +193,25 @@ Digite "EXCLUIR" para confirmar:`;
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
+                Empresa
+              </label>
+              <select
+                value={formData.empresa}
+                onChange={(e) => setFormData({ ...formData, empresa: e.target.value })}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                required
+              >
+                <option value="">Selecione uma empresa</option>
+                {EMPRESA_OPTIONS.map(opt => (
+                  <option key={opt} value={opt}>
+                    {opt}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
                 Cliente
               </label>
               <input
@@ -201,6 +235,24 @@ Digite "EXCLUIR" para confirmar:`;
                 required
                 max={getCurrentDateForInput()}
               />
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Família
+              </label>
+              <select
+                value={formData.familia}
+                onChange={(e) => setFormData({ ...formData, familia: e.target.value })}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+              >
+                <option value="">Selecione uma família</option>
+                {FAMILY_OPTIONS.map(opt => (
+                  <option key={opt} value={opt}>
+                    {opt}
+                  </option>
+                ))}
+              </select>
             </div>
 
             <div>

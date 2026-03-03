@@ -1,4 +1,4 @@
-import ExcelJS from 'exceljs';
+import ExcelJS from 'exceljs/dist/exceljs.min.js';
 
 interface DREData {
   cliente: string;
@@ -29,7 +29,7 @@ export class DRESpreadsheetService {
       const arrayBuffer = await response.arrayBuffer();
 
       const workbook = new ExcelJS.Workbook();
-      await workbook.xlsx.load(arrayBuffer);
+      await workbook.xlsx.load(new Uint8Array(arrayBuffer) as any);
 
       const worksheet = workbook.worksheets[0];
       if (!worksheet) {
@@ -37,10 +37,14 @@ export class DRESpreadsheetService {
       }
 
       const headerRow = worksheet.getRow(1);
-      const headers = headerRow.values
-        .slice(1)
-        .map((h) => String(h ?? '').trim())
-        .filter(Boolean);
+      const headers: string[] = [];
+      headerRow.eachCell({ includeEmpty: true }, (cell) => {
+        const raw = String(cell.text ?? (cell.value as any) ?? '').trim();
+        headers.push(raw);
+      });
+
+      // ExcelJS rows are 1-indexed; we align headers with getCell(i + 1) below.
+      // `eachCell` pushes from col=1..N; keep empty columns so indexes stay aligned.
 
       const jsonData: DREData[] = [];
 

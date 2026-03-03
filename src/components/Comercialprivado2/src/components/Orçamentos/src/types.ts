@@ -109,7 +109,7 @@ export interface ConfigBenefit {
   code: string;
   name: string;
   calculation_type: 'fixed' | 'per_day' | 'per_month' | 'formula';
-  base_value: number;
+  base_value: number | null;
   service_type: 'facilities' | 'vigilancia';
   formula?: string;
   is_active?: boolean;

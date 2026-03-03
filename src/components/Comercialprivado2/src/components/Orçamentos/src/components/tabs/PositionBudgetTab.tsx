@@ -252,6 +252,10 @@ export const PositionBudgetTab = ({
 
     // Equipamentos e uniformes: valores para 1 funcionário, multiplicar pela quantidade da função
     const escalaConfig = ESCALAS[selectedFunc.escala];
+    if (!escalaConfig) {
+      console.error(`Escala inválida: ${selectedFunc.escala}`);
+      return;
+    }
     const funcionariosDaFuncao = selectedFunc.qtd * escalaConfig.multiplier;
 
     const totalEquipamentosFuncao = equipamentosParaEstaFuncao.reduce(
@@ -295,6 +299,7 @@ export const PositionBudgetTab = ({
     const totalPessoasMateriais = funcoesQueReceberamMateriais.reduce(
       (sum, f) => {
         const escalaConfigTemp = ESCALAS[f.escala];
+        if (!escalaConfigTemp) return sum;
         const funcionarios = f.qtd * escalaConfigTemp.multiplier;
         return sum + funcionarios;
       },
@@ -314,6 +319,7 @@ export const PositionBudgetTab = ({
     const totalPessoasOutros = funcoesQueReceberamOutros.reduce(
       (sum, f) => {
         const escalaConfigTemp = ESCALAS[f.escala];
+        if (!escalaConfigTemp) return sum;
         const funcionarios = f.qtd * escalaConfigTemp.multiplier;
         return sum + funcionarios;
       },

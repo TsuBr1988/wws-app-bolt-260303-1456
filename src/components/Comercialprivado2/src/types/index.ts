@@ -72,6 +72,7 @@ export interface ProbabilityScores {
 
 export interface Proposal {
   id: string;
+  empresa?: string; // Empresa (ex: WWS / Worldwide)
   client: string;
   monthlyValue: number;
   months: number;
@@ -83,6 +84,7 @@ export interface Proposal {
   sdrId?: string;
   margemPercentual?: number; // Margem percentual da proposta
   cidade?: string; // Cidade da proposta
+  familia?: string; // Família (segmento) da proposta
   probabilityScores?: ProbabilityScores;
   proposalDate?: string; // Data da proposta (pode ser diferente da criação)
   closingDate?: string; // Data de fechamento (quando status = "Fechado")

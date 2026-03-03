@@ -4,6 +4,7 @@ import { MeetingMinute, meetingMinutesService, CreateMeetingMinute } from '../..
 import { MeetingMinutesForm } from './MeetingMinutesForm';
 import { MeetingMinutesCard } from './MeetingMinutesCard';
 import { MeetingMinutesViewModal } from './MeetingMinutesViewModal';
+import { useAuth } from '@/hooks/useAuth';
 
 interface AtasTabProps {
   responsaveis: string[];
@@ -14,6 +15,7 @@ export const AtasTab: React.FC<AtasTabProps> = ({
   responsaveis,
   onAddAction
 }) => {
+  const { user, hasIndicatorAccess, canEditIndicator } = useAuth();
   const [minutes, setMinutes] = useState<MeetingMinute[]>([]);
   const [loading, setLoading] = useState(true);
   const [isFormOpen, setIsFormOpen] = useState(false);
@@ -25,6 +27,12 @@ export const AtasTab: React.FC<AtasTabProps> = ({
   useEffect(() => {
     loadMinutes();
   }, []);
+
+  const canCreate = user?.is_admin
+    ? true
+    : hasIndicatorAccess('marketing', 'Atas - Pedir') || canEditIndicator('marketing', 'Atas - Pedir');
+
+  const canEdit = user?.is_admin ? true : canEditIndicator('marketing', 'Atas - Editar');
 
   const loadMinutes = async () => {
     try {
@@ -39,6 +47,7 @@ export const AtasTab: React.FC<AtasTabProps> = ({
   };
 
   const handleCreateMinute = async (minute: CreateMeetingMinute) => {
+    if (!canCreate) return;
     try {
       await meetingMinutesService.createMeetingMinute(minute);
       await loadMinutes();
@@ -51,6 +60,7 @@ export const AtasTab: React.FC<AtasTabProps> = ({
 
   const handleUpdateMinute = async (minute: CreateMeetingMinute) => {
     if (!editingMinute) return;
+    if (!canEdit) return;
 
     try {
       await meetingMinutesService.updateMeetingMinute(editingMinute.id, minute);
@@ -64,6 +74,7 @@ export const AtasTab: React.FC<AtasTabProps> = ({
   };
 
   const handleDeleteMinute = async (id: string) => {
+    if (!canEdit) return;
     if (!confirm('Tem certeza que deseja excluir esta ata?')) return;
 
     try {
@@ -80,6 +91,7 @@ export const AtasTab: React.FC<AtasTabProps> = ({
   };
 
   const handleEditMinute = (minute: MeetingMinute) => {
+    if (!canEdit) return;
     setEditingMinute(minute);
     setIsFormOpen(true);
   };
@@ -119,13 +131,15 @@ export const AtasTab: React.FC<AtasTabProps> = ({
           <h2 className="text-2xl font-bold text-gray-900">ATAs</h2>
           <p className="text-gray-600 mt-1">Gerencie suas atas de reunião</p>
         </div>
-        <button
-          onClick={() => setIsFormOpen(true)}
-          className="flex items-center gap-2 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors"
-        >
-          <Plus className="w-5 h-5" />
-          Começar ATA
-        </button>
+        {canCreate && (
+          <button
+            onClick={() => setIsFormOpen(true)}
+            className="flex items-center gap-2 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors"
+          >
+            <Plus className="w-5 h-5" />
+            Começar ATA
+          </button>
+        )}
       </div>
 
       <div className="bg-white rounded-lg border-2 border-gray-200 p-6">
@@ -156,6 +170,7 @@ export const AtasTab: React.FC<AtasTabProps> = ({
               onView={handleViewMinute}
               onEdit={handleEditMinute}
               onDelete={handleDeleteMinute}
+              canEdit={canEdit}
             />
           ))
         )}

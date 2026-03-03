@@ -1,7 +1,9 @@
 import { useState } from 'react';
 import { X } from 'lucide-react';
 import { useToast } from '@/components/ui/use-toast';
-import { supabase } from '@/lib/supabase';
+import { getDatabase } from '@/lib/databaseResolver';
+
+const supabase = getDatabase('RH');
 
 interface ManualContractModalProps {
   isOpen: boolean;

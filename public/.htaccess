@@ -1,0 +1,18 @@
+# SPA fallback (React Router) for Apache/LiteSpeed
+# Ensures client-side routes resolve to /index.html
+
+<IfModule mod_rewrite.c>
+  RewriteEngine On
+  RewriteBase /
+
+  # Serve existing files/directories directly
+  RewriteCond %{REQUEST_FILENAME} -f [OR]
+  RewriteCond %{REQUEST_FILENAME} -d
+  RewriteRule ^ - [L]
+
+  # Fallback to SPA entry
+  RewriteRule . /index.html [L]
+</IfModule>
+
+# No directory listing
+Options -Indexes

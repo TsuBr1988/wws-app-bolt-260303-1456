@@ -22,6 +22,61 @@ Um módulo é uma unidade de negócio com:
 
 Guia completo: [MODULES.md](MODULES.md)
 
+## Arquitetura de bancos (obrigatória)
+Este sistema usa 4 projetos Supabase isolados por domínio:
+
+- `app-wws-geral`
+	- RH, Operacional, Comercial (estrutura geral), Compras, Qualidade, Cultura, Atas
+- `app-wws-financas`
+	- Finanças e Financeiro
+- `app-wws-comercial-privado`
+	- Comercial Privado (inclui Orçamentos)
+- `app-wws-comercial-publico`
+	- Comercial Público
+
+### Regras de isolamento
+- Finanças nunca usa banco geral.
+- Comercial Privado nunca usa banco geral.
+- Comercial Público nunca usa banco geral.
+- Banco geral nunca usa client de finanças/comercial.
+
+### Padrão de acesso a banco
+O acesso é centralizado em:
+
+- `src/lib/supabaseClients.ts`
+- `src/lib/databaseResolver.ts`
+
+Uso obrigatório:
+
+```ts
+import { getDatabase } from '@/lib/databaseResolver'
+
+const db = getDatabase('RH')
+const { data, error } = await db.from('funcionarios').select('*')
+```
+
+Evite `createClient(...)` fora da camada central.
+
+## Processo de validação (obrigatório)
+Antes de concluir qualquer alteração com dados:
+
+1. Informar qual módulo foi alterado.
+2. Informar qual banco será usado.
+3. Informar qual client foi instanciado (`getDatabase(...)`).
+4. Informar se há risco de conflito entre bancos.
+
+Relatório de conformidade atual: [DB_COMPLIANCE_MATRIX.md](DB_COMPLIANCE_MATRIX.md)
+
+## Modo anti-aba-vazia
+Se uma aba abrir vazia, validar nesta ordem:
+
+1. O módulo chamado está correto?
+2. A consulta usa `getDatabase()` (direto ou via wrapper do módulo)?
+3. A tabela existe naquele banco?
+4. Há bloqueio de RLS?
+5. A chave/role usada é a esperada para o contexto?
+6. O schema consultado é `public` (quando esperado)?
+
 ## Exemplos de módulos
 ### Clientes
 - Objetivo: cadastro completo de clientes
@@ -63,3 +118,6 @@ Guia completo: [MODULES.md](MODULES.md)
 ## Frontend/UI
 - Tema: tokens Amber Minimal (ver docs/UI_THEME.md)
 - Responsividade: mobile-first (ver docs/RESPONSIVE.md)
+
+## Importação de arquivos (Finanças)
+Detalhes do parsing e troubleshooting de XLSX/CSV/TXT no módulo de Finanças: [FINANCAS_IMPORTACAO_ARQUIVOS.md](FINANCAS_IMPORTACAO_ARQUIVOS.md)

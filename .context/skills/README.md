@@ -26,6 +26,13 @@ On-demand expertise for AI agents. Skills are task-specific procedures that get 
 | [Feature Breakdown](./feature-breakdown/SKILL.md) | Break down features into implementable tasks | P |
 | [Api Design](./api-design/SKILL.md) | Design RESTful APIs following best practices | P, R |
 | [Security Audit](./security-audit/SKILL.md) | Security review checklist for code and infrastructure | R, V |
+| [Supabase Multi-Project Debugging](./supabase-multi-project/SKILL.md) | Diagnose and handle split schemas/data across multiple Supabase projects | E, V |
+
+### Project Skills
+
+| Skill | Description | Phases |
+|-------|-------------|--------|
+| [Hostinger Deploy](./hostinger-deploy/SKILL.md) | Deploy/runbook for Hostinger (Deployments/Vite, static public_html, Node.js) + 403 troubleshooting | P, E, V, C |
 
 ## Creating Custom Skills
 

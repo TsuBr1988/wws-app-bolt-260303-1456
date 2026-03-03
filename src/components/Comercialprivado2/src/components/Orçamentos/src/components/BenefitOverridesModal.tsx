@@ -72,7 +72,7 @@ export const BenefitOverridesModal = ({
           benefit,
           override: override || null,
           isEditing: false,
-          editValue: override?.custom_value ?? benefit.base_value,
+          editValue: override?.custom_value ?? benefit.base_value ?? 0,
           editFormula: override?.custom_formula ?? benefit.formula ?? '',
           editNotes: override?.notes ?? '',
         };
@@ -102,7 +102,7 @@ export const BenefitOverridesModal = ({
           return {
             ...item,
             isEditing: false,
-            editValue: item.override?.custom_value ?? item.benefit.base_value,
+            editValue: item.override?.custom_value ?? item.benefit.base_value ?? 0,
             editFormula: item.override?.custom_formula ?? item.benefit.formula ?? '',
             editNotes: item.override?.notes ?? '',
           };
@@ -286,7 +286,8 @@ export const BenefitOverridesModal = ({
                   <ul className="list-disc list-inside space-y-1 text-xs">
                     <li>Exibindo apenas benefícios de {serviceType === 'facilities' ? 'Facilities' : 'Vigilância'}</li>
                     <li>Valores customizados sobrescrevem os valores globais apenas para esta função</li>
-                    <li>Para benefícios com fórmula, você pode personalizar o valor ou a fórmula</li>
+                    <li>Para benefícios com fórmula padrão (ex: Auxílio Creche), apenas o valor pode ser customizado</li>
+                    <li>Para benefícios sem fórmula padrão, você pode personalizar o valor e/ou a fórmula</li>
                     <li>Use o botão "Resetar" para voltar ao valor global padrão</li>
                     <li>As alterações afetam todos os cálculos de custo desta função</li>
                   </ul>
@@ -298,6 +299,10 @@ export const BenefitOverridesModal = ({
                   const actualIndex = benefits.findIndex((b) => b === item);
                   const isCustomized = item.override !== null;
                   const hasFormulaType = item.benefit.calculation_type === 'formula';
+                  
+                  // Não permitir customização de fórmula se o benefício já tem uma fórmula padrão definida
+                  // Nesse caso, apenas o valor pode ser customizado
+                  const allowFormulaCustomization = hasFormulaType && !item.benefit.formula?.trim();
 
                   return (
                     <div
@@ -330,7 +335,7 @@ export const BenefitOverridesModal = ({
                             {item.benefit.calculation_type === 'per_month' && 'Por Mês'}
                             {item.benefit.calculation_type === 'formula' && 'Fórmula'}
                             {' • '}
-                            Valor global: {item.benefit.base_value.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
+                            Valor global: {item.benefit.base_value != null ? item.benefit.base_value.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }) : 'N/A'}
                           </p>
                         </div>
                         <div className="flex items-center gap-2">
@@ -396,7 +401,7 @@ export const BenefitOverridesModal = ({
                             />
                           </div>
 
-                          {hasFormulaType && (
+                          {allowFormulaCustomization && (
                             <div>
                               <label className="block text-sm font-semibold text-slate-700 mb-1">
                                 Fórmula Customizada (Opcional)

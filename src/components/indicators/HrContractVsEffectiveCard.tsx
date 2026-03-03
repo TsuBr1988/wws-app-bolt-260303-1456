@@ -6,9 +6,11 @@ import { DashboardService } from '@/services/dashboardService';
 import { getLast12Months } from '@/lib/months';
 import { ContractTableRow, HrContractEmployees } from '@/types/database';
 import { useToast } from '@/components/ui/use-toast';
-import { supabase } from '@/lib/supabase';
+import { getDatabase } from '@/lib/databaseResolver';
 import { ManualContractModal } from '@/components/dashboard/ManualContractModal';
 import { Plus } from 'lucide-react';
+
+const supabase = getDatabase('RH');
 
 type GroupByType = 'tipo' | 'empresa' | 'cidade';
 

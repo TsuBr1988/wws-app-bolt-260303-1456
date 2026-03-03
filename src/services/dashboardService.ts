@@ -1,6 +1,10 @@
-import { supabase } from '@/lib/supabase';
+import { getDatabase } from '@/lib/databaseResolver';
 import { HrHeadcount, FinRevenue, ComSales, HrTurnover, HrContractEmployees, HrAbsenteeism, HrSeverance, Client, HrLaborLawsuits, PurchasesUniforms, PurchasesCleaningMaterials, PurchasesEpis, PurchasesEquipamentos, PurchasesCombustivel, PurchasesSemParar, OperationalFTs, OperationalSupervisorVisits, OperationalClientVisits, FinancialContractMargin, FinancialStationResults, HrOrganogram, Department, BscItem, BscFoundation } from '@/types/database';
 import { getLast12Months } from '@/lib/months';
+
+const supabaseGeral = getDatabase('RH');
+const supabaseFinancas = getDatabase('FINANCAS');
+const supabase = supabaseGeral;
 
 const debugLog = (...args: unknown[]) => {
   if (import.meta.env.DEV && import.meta.env.VITE_DEBUG_LOGS === 'true') console.log(...args);
@@ -10,7 +14,7 @@ export class DashboardService {
   // HR Headcount Services
   static async getHrHeadcount(monthsRange: string[]): Promise<HrHeadcount[]> {
     debugLog('[DashboardService] Fetching HR headcount for months:', monthsRange);
-    const { data, error } = await supabase
+    const { data, error } = await supabaseGeral
       .from('hr_headcount')
       .select('*')
       .in('month_ym', monthsRange)
@@ -25,7 +29,7 @@ export class DashboardService {
   }
 
   static async upsertHrHeadcount(records: Omit<HrHeadcount, 'id' | 'created_at'>[]): Promise<void> {
-    const { error } = await supabase
+    const { error } = await supabaseGeral
       .from('hr_headcount')
       .upsert(records, { onConflict: 'month_ym,company' });
 
@@ -34,7 +38,7 @@ export class DashboardService {
 
   // HR Turnover Services
   static async getHrTurnover(monthsRange: string[]): Promise<HrTurnover[]> {
-    const { data, error } = await supabase
+    const { data, error } = await supabaseGeral
       .from('hr_turnover')
       .select('*')
       .in('month_ym', monthsRange)
@@ -45,7 +49,7 @@ export class DashboardService {
   }
 
   static async upsertHrTurnover(records: Omit<HrTurnover, 'id' | 'created_at'>[]): Promise<void> {
-    const { error } = await supabase
+    const { error } = await supabaseGeral
       .from('hr_turnover')
       .upsert(records, { onConflict: 'month_ym' });
 
@@ -54,7 +58,7 @@ export class DashboardService {
 
   // Finance Revenue Services
   static async getFinRevenue(monthsRange: string[]): Promise<FinRevenue[]> {
-    const { data, error } = await supabase
+    const { data, error } = await supabaseFinancas
       .from('fin_revenue')
       .select('*')
       .in('month_ym', monthsRange)
@@ -65,7 +69,7 @@ export class DashboardService {
   }
 
   static async upsertFinRevenue(records: Omit<FinRevenue, 'id' | 'created_at'>[]): Promise<void> {
-    const { error } = await supabase
+    const { error } = await supabaseFinancas
       .from('fin_revenue')
       .upsert(records, { onConflict: 'company,contract_name,type,month_ym' });
 
@@ -74,7 +78,7 @@ export class DashboardService {
 
   // Commercial Sales Services
   static async getComSales(monthsRange: string[], segment?: 'publico' | 'privado'): Promise<ComSales[]> {
-    let query = supabase
+    let query = supabaseGeral
       .from('com_sales')
       .select('*')
       .in('month_ym', monthsRange);
@@ -90,7 +94,7 @@ export class DashboardService {
   }
 
   static async upsertComSales(records: Omit<ComSales, 'id' | 'created_at'>[]): Promise<void> {
-    const { error } = await supabase
+    const { error } = await supabaseGeral
       .from('com_sales')
       .upsert(records, { onConflict: 'month_ym,segment' });
 
@@ -133,6 +137,9 @@ export class DashboardService {
         records.push({
           month_ym: month,
           company,
+          contract_name: 'TOTAL',
+          type: 'publico',
+          budget_2025: 0,
           amount: 0
         });
       });
@@ -675,7 +682,7 @@ export class DashboardService {
   }
 
   static async getFinancialContractMargin(monthsRange: string[]): Promise<FinancialContractMargin[]> {
-    const { data, error } = await supabase
+    const { data, error } = await supabaseFinancas
       .from('financial_contract_margin')
       .select('*')
       .in('month_ym', monthsRange)
@@ -688,7 +695,7 @@ export class DashboardService {
   }
 
   static async upsertFinancialContractMargin(records: Omit<FinancialContractMargin, 'id' | 'created_at' | 'updated_at'>[]): Promise<void> {
-    const { error } = await supabase
+    const { error } = await supabaseFinancas
       .from('financial_contract_margin')
       .upsert(records, { onConflict: 'company,contract_name,month_ym' });
 
@@ -696,7 +703,7 @@ export class DashboardService {
   }
 
   static async getFinancialStationResults(monthsRange: string[]): Promise<FinancialStationResults[]> {
-    const { data, error } = await supabase
+    const { data, error } = await supabaseFinancas
       .from('financial_station_results')
       .select('*')
       .in('month_ym', monthsRange)
@@ -708,17 +715,15 @@ export class DashboardService {
   }
 
   static async upsertFinancialStationResults(records: Omit<FinancialStationResults, 'id' | 'created_at' | 'updated_at'>[]): Promise<void> {
-    const { data, error } = await supabase
+    const { error } = await supabaseFinancas
       .from('financial_station_results')
       .upsert(records, { onConflict: 'contract_name,month_ym' })
-      .select();
+      ;
 
     if (error) {
       console.error('Upsert error:', error);
       throw error;
     }
-
-    return data;
   }
 
   static async deleteFinancialStationResults(rows: { contract_name: string }[]): Promise<void> {
@@ -726,7 +731,7 @@ export class DashboardService {
 
     for (const row of rows) {
       for (const month of months) {
-        const { error } = await supabase
+        const { error } = await supabaseFinancas
           .from('financial_station_results')
           .delete()
           .eq('contract_name', row.contract_name)
@@ -751,7 +756,7 @@ export class DashboardService {
 
     if (toDelete.length > 0) {
       const deletePromises = toDelete.map(record =>
-        supabase
+        supabaseFinancas
           .from('financial_station_results')
           .delete()
           .eq('contract_name', record.contract_name)
@@ -773,7 +778,7 @@ export class DashboardService {
   }
 
   static async getFinancialAdministrativeExpenses(monthsRange: string[]) {
-    const { data, error } = await supabase
+    const { data, error } = await supabaseFinancas
       .from('fin_administrative_expenses')
       .select('*')
       .in('month_ym', monthsRange)
@@ -786,7 +791,7 @@ export class DashboardService {
   }
 
   static async upsertFinancialAdministrativeExpenses(records: { company: string; department: string; month_ym: string; amount: number }[]): Promise<void> {
-    const { error } = await supabase
+    const { error } = await supabaseFinancas
       .from('fin_administrative_expenses')
       .upsert(records, { onConflict: 'company,department,month_ym' });
 
@@ -794,7 +799,7 @@ export class DashboardService {
   }
 
   static async getAvailableDepartments(): Promise<string[]> {
-    const { data, error } = await supabase
+    const { data, error } = await supabaseFinancas
       .from('fin_administrative_expenses')
       .select('department')
       .order('department');
@@ -806,7 +811,10 @@ export class DashboardService {
   }
 
   static async getAllAvailableMonths(tableName: string): Promise<string[]> {
-    const { data, error } = await supabase
+    const isFinancialTable = tableName.startsWith('financial_') || tableName.startsWith('fin_');
+    const db = isFinancialTable ? supabaseFinancas : supabaseGeral;
+
+    const { data, error } = await db
       .from(tableName)
       .select('month_ym')
       .order('month_ym', { ascending: true });

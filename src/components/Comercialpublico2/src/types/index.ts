@@ -90,6 +90,8 @@ export interface Licitacao {
   percentualVencedor?: number | string;
   nossoLance?: number;
   percentualNossoLance?: number | string;
+  margemLucro?: number;
+  margemAdm?: number;
   posicaoAtual?: string;
   colocacaoAtual?: string;
   months: number;

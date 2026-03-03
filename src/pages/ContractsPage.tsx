@@ -9,7 +9,7 @@ import { EditContractForm } from '../components/contracts/EditContractForm';
 import { AddendumViewModal } from '../components/contracts/AddendumViewModal';
 import { ContractChart } from '../components/contracts/ContractChart';
 import { MonthlyRevenueModal } from '../components/contracts/MonthlyRevenueModal';
-import { supabase } from '../lib/supabase';
+import { getDatabase, type Modulo } from '../lib/databaseResolver';
 import {
   ContractWithAddendums,
   getCurrentValue,
@@ -38,7 +38,12 @@ interface ReequilibrioData {
   dataMaxima: Date;
 }
 
-export function ContractsPage() {
+interface ContractsPageProps {
+  modulo?: Modulo;
+}
+
+export function ContractsPage({ modulo = 'RH' }: ContractsPageProps) {
+  const supabase = getDatabase(modulo);
   const { toast } = useToast();
   const [contracts, setContracts] = useState<ContractWithAddendums[]>([]);
   const [loading, setLoading] = useState(true);
@@ -680,6 +685,7 @@ export function ContractsPage() {
           {filteredContracts.map((contract) => (
             <ContractCard
               key={contract.id}
+                supabaseClient={supabase}
               contract={contract}
               onEditClick={() => {
                 setSelectedContract(contract);
@@ -953,7 +959,7 @@ function EmployeesDistributionModal({ employeesData, onClose }: EmployeesDistrib
                       cx="50%"
                       cy="50%"
                       labelLine={false}
-                      label={({ name, percent }) => `${name}: ${(percent * 100).toFixed(0)}%`}
+                      label={({ name, percent }) => `${name}: ${(((percent ?? 0) as number) * 100).toFixed(0)}%`}
                       outerRadius={120}
                       fill="#8884d8"
                       dataKey="value"

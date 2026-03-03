@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { Calendar, AlertCircle, CheckCircle, Clock } from 'lucide-react';
-import { supabase } from '../../../../../lib/supabase';
+import { supabase } from '../../lib/supabase';
 
 interface ReequilibrioLembrete {
   id: string;

@@ -1,7 +1,9 @@
 import { useState, useEffect, useRef } from 'react';
 import { Check, ChevronsUpDown, Plus, X } from 'lucide-react';
-import { supabase } from '../../lib/supabase';
+import { getDatabase } from '../../lib/databaseResolver';
 import { useToast } from '../ui/use-toast';
+
+const supabase = getDatabase('CULTURA');
 
 interface Person {
   id: string;

@@ -9,13 +9,15 @@ interface MeetingMinutesCardProps {
   onView: (minute: MeetingMinute) => void;
   onEdit: (minute: MeetingMinute) => void;
   onDelete: (id: string) => void;
+  canEdit?: boolean;
 }
 
 export const MeetingMinutesCard: React.FC<MeetingMinutesCardProps> = ({
   minute,
   onView,
   onEdit,
-  onDelete
+  onDelete,
+  canEdit = true,
 }) => {
   const preview = minute.content.length > 150
     ? minute.content.substring(0, 150) + '...'
@@ -63,21 +65,25 @@ export const MeetingMinutesCard: React.FC<MeetingMinutesCardProps> = ({
 
           <div className="flex-1"></div>
 
-          <button
-            onClick={() => onEdit(minute)}
-            className="p-1.5 text-gray-600 hover:bg-gray-100 rounded-lg transition-colors"
-            title="Editar"
-          >
-            <Pencil className="w-4 h-4" />
-          </button>
+          {canEdit && (
+            <>
+              <button
+                onClick={() => onEdit(minute)}
+                className="p-1.5 text-gray-600 hover:bg-gray-100 rounded-lg transition-colors"
+                title="Editar"
+              >
+                <Pencil className="w-4 h-4" />
+              </button>
 
-          <button
-            onClick={() => onDelete(minute.id)}
-            className="p-1.5 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
-            title="Excluir"
-          >
-            <Trash2 className="w-4 h-4" />
-          </button>
+              <button
+                onClick={() => onDelete(minute.id)}
+                className="p-1.5 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                title="Excluir"
+              >
+                <Trash2 className="w-4 h-4" />
+              </button>
+            </>
+          )}
         </div>
       </div>
     </div>

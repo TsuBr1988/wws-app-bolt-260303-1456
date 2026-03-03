@@ -2,7 +2,7 @@
 import React, { useState, useMemo } from 'react';
 import { Settings, X, ChevronDown, ChevronRight } from 'lucide-react';
 import { format, eachMonthOfInterval } from 'date-fns';
-import ptBR from 'date-fns/locale/pt-BR';
+import { ptBR } from 'date-fns/locale/pt-BR';
 import { Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, ComposedChart, Line, Legend } from 'recharts';
 import { CoaNode, CoaViewMode, CashSubView } from '../../../types';
 import { formatCurrency } from '../../../utils';
@@ -272,7 +272,7 @@ const ContractAnalysisTab: React.FC<ContractAnalysisTabProps> = ({
                             <Tooltip 
                               cursor={{fill: '#f8fafc'}}
                               contentStyle={{borderRadius: '16px', border: 'none', boxShadow: '0 4px 20px -5px rgba(0,0,0,0.1)'}}
-                              formatter={(value: number) => formatCurrency(value)}
+                              formatter={(value) => formatCurrency(Number(value ?? 0))}
                             />
                             {/* IMPORTANTE: Removido stackId para ficarem lado a lado */}
                             <Bar dataKey="bar1" name="Barra de Despesa 1" fill={barConfig[1].color} radius={[4, 4, 0, 0]} barSize={16} />

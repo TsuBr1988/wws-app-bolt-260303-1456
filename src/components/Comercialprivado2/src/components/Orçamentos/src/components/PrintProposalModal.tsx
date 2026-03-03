@@ -6,6 +6,7 @@ import { ESCALAS, GRUPOS_ENCARGOS } from '../constants';
 import { budgetEncargosService } from '../services/budgetEncargosService';
 import { getMinimumWage } from '../services/systemConfigService';
 import type { FunctionConfig } from '../types';
+import { exportProposalPdfFromModal, printProposalFromModal } from '../utils/printProposalUtils';
 
 interface PrintProposalModalProps {
   isOpen: boolean;
@@ -283,12 +284,20 @@ export const PrintProposalModal = ({
 
         const totalPessoasMateriais = funcoesQueReceberamMateriais.reduce((sum: number, f: any) => {
           const escalaConfig = ESCALAS[f.scale || '12x36'];
+          if (!escalaConfig) {
+            console.warn(`⚠️ Escala não encontrada: ${f.scale}`);
+            return sum;
+          }
           const funcionarios = f.quantity * escalaConfig.multiplier;
           return sum + funcionarios;
         }, 0);
 
         const totalPessoasEquipamentos = funcoesQueReceberamEquipamentos.reduce((sum: number, f: any) => {
           const escalaConfig = ESCALAS[f.scale || '12x36'];
+          if (!escalaConfig) {
+            console.warn(`⚠️ Escala não encontrada: ${f.scale}`);
+            return sum;
+          }
           const funcionarios = f.quantity * escalaConfig.multiplier;
           return sum + funcionarios;
         }, 0);
@@ -377,8 +386,21 @@ export const PrintProposalModal = ({
     setIsLoading(false);
   };
 
-  const handlePrint = () => {
-    window.print();
+  const handlePrint = async () => {
+    if (isLoading) return;
+
+    const modalEl = document.getElementById('proposalPrintModal');
+    const safeBudget = String(budgetNumber || 'proposta').replace(/[^a-z0-9-_]+/gi, '-');
+    const dateStr = new Date().toISOString().slice(0, 10);
+    const fileName = `proposta-${safeBudget}-${dateStr}.pdf`;
+
+    try {
+      await exportProposalPdfFromModal(modalEl, fileName);
+    } catch (error) {
+      console.error('Falha ao exportar PDF, abrindo impressão do navegador:', error);
+      // Fallback: mantém comportamento antigo via impressão (usuário pode salvar como PDF)
+      printProposalFromModal(modalEl);
+    }
   };
 
   if (!isOpen) return null;

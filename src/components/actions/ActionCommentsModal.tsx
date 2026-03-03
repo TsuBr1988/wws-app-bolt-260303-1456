@@ -1,10 +1,12 @@
 import { useState, useEffect } from 'react';
 import { X, Send, MessageCircle } from 'lucide-react';
 import { Button } from '../ui/button';
-import { supabase } from '../../lib/supabase';
+import { getDatabase } from '../../lib/databaseResolver';
 import { useToast } from '../ui/use-toast';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
+
+const supabase = getDatabase('ATAS');
 
 interface Comment {
   id: string;

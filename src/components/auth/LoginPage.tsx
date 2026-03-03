@@ -4,7 +4,6 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { useToast } from '@/components/ui/use-toast';
-import { Building2 } from 'lucide-react';
 
 export function LoginPage() {
   const [email, setEmail] = useState('');
@@ -47,15 +46,13 @@ export function LoginPage() {
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center p-4">
       <Card className="w-full max-w-md">
         <CardHeader className="text-center">
-          <div className="flex justify-center mb-4">
-            <div className="bg-blue-600 p-3 rounded-xl">
-              <Building2 className="h-8 w-8 text-white" />
-            </div>
+          <div className="flex justify-center mb-6">
+            <img 
+              src="/grupo_wws.jpeg" 
+              alt="Grupo WWS" 
+              className="h-24 w-auto object-contain"
+            />
           </div>
-          <CardTitle className="text-2xl font-bold">Grupo WWS</CardTitle>
-          <p className="text-sm text-muted-foreground">
-            Dashboard de Indicadores
-          </p>
         </CardHeader>
         <CardContent>
           <form onSubmit={handleSubmit} className="space-y-4">

@@ -759,7 +759,7 @@ const DelinquentTab: React.FC<DelinquentTabProps> = ({
                                                 cx="50%"
                                                 cy="50%"
                                                 labelLine={false}
-                                                label={({ name, percent }) => `${(percent * 100).toFixed(1)}%`}
+                                                label={({ name, percent }) => `${(((percent ?? 0) as number) * 100).toFixed(1)}%`}
                                                 outerRadius={150}
                                                 fill="#8884d8"
                                                 dataKey="value"
@@ -769,9 +769,9 @@ const DelinquentTab: React.FC<DelinquentTabProps> = ({
                                                 ))}
                                             </Pie>
                                             <Tooltip
-                                                formatter={(value: number, name: string, props: any) => [
-                                                    formatCurrency(props.payload.originalValue),
-                                                    props.payload.name
+                                                formatter={(value, name, props: any) => [
+                                                    formatCurrency(Number(props?.payload?.originalValue ?? 0)),
+                                                    String(props?.payload?.name ?? name ?? '')
                                                 ]}
                                                 contentStyle={{
                                                     backgroundColor: 'white',

@@ -1,7 +1,7 @@
 import { Button } from '@/components/ui/button';
 import { useAuth } from '@/hooks/useAuth';
-import { LogOut, Settings, User, Menu, X } from 'lucide-react';
-import { useState } from 'react';
+import { LogOut, Settings, User, Menu, X, ChevronDown } from 'lucide-react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 
 interface Tab {
   value: string;
@@ -15,11 +15,42 @@ interface HeaderProps {
   activeTab: string;
   onTabChange: (value: string) => void;
   availableTabs: Tab[];
+  onMarketingNavigate?: (tab: 'requests' | 'metrics' | 'planning' | 'actions' | 'atas') => void;
 }
 
-export function Header({ onSettingsClick, isSettingsActive, onLogoClick, activeTab, onTabChange, availableTabs }: HeaderProps) {
-  const { signOut, user } = useAuth();
+export function Header({ onSettingsClick, isSettingsActive, onLogoClick, activeTab, onTabChange, availableTabs, onMarketingNavigate }: HeaderProps) {
+  const { signOut, user, hasIndicatorAccess } = useAuth();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [marketingMenuOpen, setMarketingMenuOpen] = useState(false);
+  const [mobileMarketingOpen, setMobileMarketingOpen] = useState(false);
+  const marketingMenuRef = useRef<HTMLDivElement | null>(null);
+
+  const marketingItems = useMemo(() => {
+    const can = (indicator: string) => user?.is_admin ? true : hasIndicatorAccess('marketing', indicator);
+
+    return [
+      { id: 'requests' as const, label: 'Solicitações', disabled: !can('Marketing > Solicitações') },
+      { id: 'metrics' as const, label: 'Comparativo de Plataformas', disabled: !can('Marketing > Comparativo de Plataformas') },
+      { id: 'planning' as const, label: 'Planejamento', disabled: !can('Marketing > Planejamento') },
+      { id: 'actions' as const, label: 'Tarefas', disabled: !can('Marketing > Tarefas') },
+      { id: 'atas' as const, label: 'Atas', disabled: !can('Marketing > Atas') },
+    ];
+  }, [hasIndicatorAccess, user?.is_admin]);
+
+  useEffect(() => {
+    if (!marketingMenuOpen) return;
+
+    const handleDocumentClick = (event: MouseEvent) => {
+      const target = event.target as Node | null;
+      if (!target) return;
+      if (marketingMenuRef.current && !marketingMenuRef.current.contains(target)) {
+        setMarketingMenuOpen(false);
+      }
+    };
+
+    document.addEventListener('mousedown', handleDocumentClick);
+    return () => document.removeEventListener('mousedown', handleDocumentClick);
+  }, [marketingMenuOpen]);
 
   const handleLogout = async () => {
     await signOut();
@@ -27,6 +58,19 @@ export function Header({ onSettingsClick, isSettingsActive, onLogoClick, activeT
 
   const handleTabClick = (value: string) => {
     onTabChange(value);
+    setMobileMenuOpen(false);
+    if (value !== 'marketing') setMarketingMenuOpen(false);
+  };
+
+  const handleMarketingMainClick = () => {
+    handleTabClick('marketing');
+    setMarketingMenuOpen(prev => !prev);
+  };
+
+  const handleMarketingItemClick = (id: (typeof marketingItems)[number]['id'], disabled: boolean) => {
+    if (disabled) return;
+    onMarketingNavigate?.(id);
+    setMarketingMenuOpen(false);
     setMobileMenuOpen(false);
   };
 
@@ -62,19 +106,65 @@ export function Header({ onSettingsClick, isSettingsActive, onLogoClick, activeT
             >
               Home
             </button>
-            {availableTabs.map((tab) => (
-              <button
-                key={tab.value}
-                onClick={() => handleTabClick(tab.value)}
-                className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-all ${
-                  activeTab === tab.value
-                    ? 'bg-brand-dark text-white shadow-md'
-                    : 'text-gray-700 hover:bg-gray-50 hover:text-brand-dark'
-                }`}
-              >
-                {tab.label}
-              </button>
-            ))}
+            {availableTabs.map((tab) => {
+              if (tab.value === 'marketing') {
+                return (
+                  <div key={tab.value} className="relative" ref={marketingMenuRef}>
+                    <button
+                      onClick={handleMarketingMainClick}
+                      className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-all inline-flex items-center gap-1 ${
+                        activeTab === tab.value
+                          ? 'bg-brand-dark text-white shadow-md'
+                          : 'text-gray-700 hover:bg-gray-50 hover:text-brand-dark'
+                      }`}
+                      aria-haspopup="menu"
+                      aria-expanded={marketingMenuOpen}
+                    >
+                      {tab.label}
+                      <ChevronDown className={`h-4 w-4 transition-transform ${marketingMenuOpen ? 'rotate-180' : ''}`} />
+                    </button>
+
+                    {marketingMenuOpen && (
+                      <div
+                        role="menu"
+                        className="absolute left-0 mt-2 w-64 rounded-lg border border-gray-200 bg-white shadow-lg p-1 z-50"
+                      >
+                        {marketingItems.map((item) => (
+                          <button
+                            key={item.id}
+                            role="menuitem"
+                            type="button"
+                            disabled={item.disabled}
+                            onClick={() => handleMarketingItemClick(item.id, item.disabled)}
+                            className={`w-full text-left px-3 py-2 rounded-md text-sm transition-colors ${
+                              item.disabled
+                                ? 'text-gray-400 cursor-not-allowed'
+                                : 'text-gray-700 hover:bg-gray-50 hover:text-brand-dark'
+                            }`}
+                          >
+                            {item.label}
+                          </button>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                );
+              }
+
+              return (
+                <button
+                  key={tab.value}
+                  onClick={() => handleTabClick(tab.value)}
+                  className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-all ${
+                    activeTab === tab.value
+                      ? 'bg-brand-dark text-white shadow-md'
+                      : 'text-gray-700 hover:bg-gray-50 hover:text-brand-dark'
+                  }`}
+                >
+                  {tab.label}
+                </button>
+              );
+            })}
           </nav>
 
           {/* Mobile Menu Button */}
@@ -137,19 +227,62 @@ export function Header({ onSettingsClick, isSettingsActive, onLogoClick, activeT
               >
                 Home
               </button>
-              {availableTabs.map((tab) => (
-                <button
-                  key={tab.value}
-                  onClick={() => handleTabClick(tab.value)}
-                  className={`px-3 py-2 rounded-lg text-sm font-medium text-left transition-all ${
-                    activeTab === tab.value
-                      ? 'bg-brand-dark text-white shadow-md'
-                      : 'text-gray-700 hover:bg-gray-50 hover:text-brand-dark'
-                  }`}
-                >
-                  {tab.label}
-                </button>
-              ))}
+              {availableTabs.map((tab) => {
+                if (tab.value === 'marketing') {
+                  return (
+                    <div key={tab.value} className="flex flex-col">
+                      <button
+                        onClick={() => {
+                          onTabChange('marketing');
+                          setMobileMarketingOpen(prev => !prev);
+                        }}
+                        className={`px-3 py-2 rounded-lg text-sm font-medium text-left transition-all flex items-center justify-between ${
+                          activeTab === tab.value
+                            ? 'bg-brand-dark text-white shadow-md'
+                            : 'text-gray-700 hover:bg-gray-50 hover:text-brand-dark'
+                        }`}
+                      >
+                        <span>{tab.label}</span>
+                        <ChevronDown className={`h-4 w-4 transition-transform ${mobileMarketingOpen ? 'rotate-180' : ''}`} />
+                      </button>
+
+                      {mobileMarketingOpen && (
+                        <div className="ml-2 mt-1 flex flex-col space-y-1">
+                          {marketingItems.map((item) => (
+                            <button
+                              key={item.id}
+                              type="button"
+                              disabled={item.disabled}
+                              onClick={() => handleMarketingItemClick(item.id, item.disabled)}
+                              className={`px-3 py-2 rounded-lg text-sm font-medium text-left transition-all ${
+                                item.disabled
+                                  ? 'text-gray-400 cursor-not-allowed'
+                                  : 'text-gray-700 hover:bg-gray-50 hover:text-brand-dark'
+                              }`}
+                            >
+                              {item.label}
+                            </button>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  );
+                }
+
+                return (
+                  <button
+                    key={tab.value}
+                    onClick={() => handleTabClick(tab.value)}
+                    className={`px-3 py-2 rounded-lg text-sm font-medium text-left transition-all ${
+                      activeTab === tab.value
+                        ? 'bg-brand-dark text-white shadow-md'
+                        : 'text-gray-700 hover:bg-gray-50 hover:text-brand-dark'
+                    }`}
+                  >
+                    {tab.label}
+                  </button>
+                );
+              })}
             </div>
           </nav>
         )}

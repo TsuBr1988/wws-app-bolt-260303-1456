@@ -1,8 +1,10 @@
 import { useState, useEffect } from 'react';
 import { Edit2, Save, X, Upload, FileText, Image as ImageIcon } from 'lucide-react';
-import { supabase } from '@/lib/supabase';
+import { getDatabase } from '@/lib/databaseResolver';
 import { useToast } from '@/components/ui/use-toast';
 import { useAuth } from '@/hooks/useAuth';
+
+const supabase = getDatabase('CULTURA');
 
 interface FlywheelData {
   id: string;

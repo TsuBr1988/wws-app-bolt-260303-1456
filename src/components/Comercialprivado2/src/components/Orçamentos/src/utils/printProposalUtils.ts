@@ -5,6 +5,9 @@
  * - Páginas seguintes: Detalhamento de cada posto (um posto por página)
  */
 
+import html2canvas from 'html2canvas';
+import { jsPDF } from 'jspdf';
+
 /**
  * Converte milímetros para pixels (assumindo 96 DPI)
  */
@@ -385,4 +388,122 @@ export function printProposalFromModal(modalEl: HTMLElement | null): void {
   };
 
   doPrint();
+}
+
+async function waitForImages(root: HTMLElement): Promise<void> {
+  const images = Array.from(root.querySelectorAll('img'));
+  await Promise.all(images.map((img) => {
+    if (img.complete) return Promise.resolve();
+    return new Promise<void>((resolve) => {
+      const done = () => resolve();
+      img.addEventListener('load', done, { once: true });
+      img.addEventListener('error', done, { once: true });
+      setTimeout(done, 2000);
+    });
+  }));
+}
+
+/**
+ * Exporta a proposta em PDF A4 (download) a partir do conteúdo do modal.
+ * Observação: a geração é feita por renderização (canvas), então o resultado
+ * é fiel visualmente, mas não é um PDF com texto selecionável.
+ */
+export async function exportProposalPdfFromModal(
+  modalEl: HTMLElement | null,
+  fileName = 'proposta.pdf'
+): Promise<void> {
+  if (!modalEl) {
+    throw new Error('Elemento do modal não encontrado');
+  }
+
+  const pdf = new jsPDF({
+    orientation: 'p',
+    unit: 'mm',
+    format: 'a4',
+    compress: true,
+  });
+
+  const sandbox = document.createElement('div');
+  sandbox.setAttribute('aria-hidden', 'true');
+  sandbox.style.position = 'fixed';
+  sandbox.style.left = '-10000px';
+  sandbox.style.top = '0';
+  sandbox.style.width = '210mm';
+  sandbox.style.background = 'white';
+  sandbox.style.padding = '0';
+  sandbox.style.margin = '0';
+
+  const style = document.createElement('style');
+  style.textContent = `
+    * { box-sizing: border-box; }
+
+    .pdf-page {
+      width: 210mm;
+      padding: 12mm;
+      background: #ffffff;
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      color: #0f172a;
+      font-size: 10pt;
+      line-height: 1.25;
+    }
+
+    /* Evitar cortes por containers scrolláveis no PDF */
+    .pdf-page .overflow-x-auto,
+    .pdf-page .overflow-y-auto,
+    .pdf-page .overflow-auto {
+      overflow: visible !important;
+      max-height: none !important;
+      height: auto !important;
+    }
+
+    /* Tabelas devem ocupar a largura da página */
+    .pdf-page table { width: 100% !important; }
+  `;
+
+  sandbox.appendChild(style);
+
+  const pageWrapper = document.createElement('div');
+  pageWrapper.className = 'pdf-page';
+
+  const cloned = modalEl.cloneNode(true) as HTMLElement;
+  cloned.removeAttribute('id');
+  pageWrapper.appendChild(cloned);
+  sandbox.appendChild(pageWrapper);
+  document.body.appendChild(sandbox);
+
+  try {
+    await waitForFonts(document);
+    await waitForImages(sandbox);
+
+    // Renderizar o conteúdo completo e paginar no PDF A4
+    const canvas = await html2canvas(pageWrapper, {
+      backgroundColor: '#ffffff',
+      scale: Math.min(2, window.devicePixelRatio || 1),
+      useCORS: true,
+    });
+
+    const imgData = canvas.toDataURL('image/jpeg', 0.95);
+    const pageWidth = pdf.internal.pageSize.getWidth();
+    const pageHeight = pdf.internal.pageSize.getHeight();
+
+    const imgHeight = (canvas.height * pageWidth) / canvas.width;
+    let remainingHeight = imgHeight;
+    let y = 0;
+
+    pdf.addImage(imgData, 'JPEG', 0, y, pageWidth, imgHeight, undefined, 'FAST');
+    remainingHeight -= pageHeight;
+
+    while (remainingHeight > 0) {
+      pdf.addPage();
+      y -= pageHeight;
+      pdf.addImage(imgData, 'JPEG', 0, y, pageWidth, imgHeight, undefined, 'FAST');
+      remainingHeight -= pageHeight;
+    }
+
+    pdf.save(fileName);
+  } finally {
+    if (document.body.contains(sandbox)) {
+      document.body.removeChild(sandbox);
+    }
+  }
 }

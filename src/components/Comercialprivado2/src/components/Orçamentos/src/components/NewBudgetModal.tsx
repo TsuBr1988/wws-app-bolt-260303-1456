@@ -25,6 +25,7 @@ export const NewBudgetModal = ({ isOpen, onClose, onSave, editBudget }: NewBudge
   const [clientName, setClientName] = useState('');
   const [sindicoComprador, setSindicoComprador] = useState('');
   const [description, setDescription] = useState('');
+  const [familia, setFamilia] = useState('');
   const [cityName, setCityName] = useState('');
   const [cnpj, setCnpj] = useState('');
   const [email, setEmail] = useState('');
@@ -34,12 +35,22 @@ export const NewBudgetModal = ({ isOpen, onClose, onSave, editBudget }: NewBudge
   const [serviceType, setServiceType] = useState<'facilities' | 'vigilancia'>('facilities');
   const [isLoading, setIsLoading] = useState(false);
 
+  const FAMILY_OPTIONS = [
+    'Shopping',
+    'Saúde',
+    'Múltiplos pontos (Varejo)',
+    'Indústria',
+    'Condomínio',
+    'Aeroportos',
+  ];
+
   useEffect(() => {
     if (isOpen && !editBudget) {
       generateBudgetNumber();
       setClientName('');
       setSindicoComprador('');
       setDescription('');
+      setFamilia('');
       setCityName('');
       setCnpj('');
       setEmail('');
@@ -52,6 +63,7 @@ export const NewBudgetModal = ({ isOpen, onClose, onSave, editBudget }: NewBudge
       setClientName(editBudget.client_name);
       setSindicoComprador('');
       setDescription(editBudget.description || '');
+      setFamilia('');
       setCityName(editBudget.city_name || '');
       setCnpj(editBudget.cnpj || '');
       setEmail(editBudget.email || '');
@@ -67,12 +79,16 @@ export const NewBudgetModal = ({ isOpen, onClose, onSave, editBudget }: NewBudge
 
     const { data } = await supabase
       .from('budgets')
-      .select('service_type')
+      .select('service_type, familia')
       .eq('id', editBudget.id)
       .maybeSingle();
 
     if (data?.service_type) {
       setServiceType(data.service_type);
+    }
+
+    if (data?.familia) {
+      setFamilia(data.familia);
     }
   };
 
@@ -110,6 +126,7 @@ export const NewBudgetModal = ({ isOpen, onClose, onSave, editBudget }: NewBudge
           .update({
             client_name: clientName,
             description: description,
+            familia: familia || null,
             city_name: cityName,
             cnpj: cnpj || null,
             email: email || null,
@@ -134,6 +151,7 @@ export const NewBudgetModal = ({ isOpen, onClose, onSave, editBudget }: NewBudge
             budget_number: budgetNumber,
             client_name: clientName,
             description: description,
+            familia: familia || null,
             city_name: cityName,
             cnpj: cnpj || null,
             email: email || null,
@@ -239,6 +257,24 @@ export const NewBudgetModal = ({ isOpen, onClose, onSave, editBudget }: NewBudge
                 O tipo de serviço não pode ser alterado após a criação do orçamento
               </p>
             )}
+          </div>
+
+          <div>
+            <label className="block text-sm font-semibold text-slate-700 mb-2">
+              Família
+            </label>
+            <select
+              value={familia}
+              onChange={(e) => setFamilia(e.target.value)}
+              className="w-full px-4 py-3 border border-slate-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            >
+              <option value="">Selecione uma família</option>
+              {FAMILY_OPTIONS.map(opt => (
+                <option key={opt} value={opt}>
+                  {opt}
+                </option>
+              ))}
+            </select>
           </div>
 
           <div>

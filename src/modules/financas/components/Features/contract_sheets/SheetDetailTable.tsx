@@ -1,6 +1,6 @@
 import React, { useState, useMemo } from 'react';
 import { format } from 'date-fns';
-import ptBR from 'date-fns/locale/pt-BR';
+import { ptBR } from 'date-fns/locale/pt-BR';
 import { formatCurrency } from '../../../utils';
 import { CategoryRow, hasChildren, isRowVisible, monthKey, normalizeCode, parseBR } from './sheetDetailUtils';
 import { SheetDetailRow } from './SheetDetailRow';

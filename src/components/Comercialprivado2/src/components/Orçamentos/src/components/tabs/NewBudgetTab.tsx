@@ -22,6 +22,7 @@ interface Budget {
   proposal_id?: string;
   margem_lucro?: number;
   margem_adm?: number;
+  _sourceKey?: 'orcamentos' | 'comercial_privado';
 }
 
 interface NewBudgetTabProps {
@@ -55,6 +56,42 @@ export const NewBudgetTab = ({ activeBudget, onBudgetCreated, onBudgetUpdated, o
   const [isCopyModalOpen, setIsCopyModalOpen] = useState(false);
   const [budgetToCopy, setBudgetToCopy] = useState<Budget | null>(null);
   const [isCopying, setIsCopying] = useState(false);
+  const [budgetsClientInUse, setBudgetsClientInUse] = useState<any>(supabase);
+  const [legacySchemaAvailable, setLegacySchemaAvailable] = useState(true);
+  const [sourceStatusMessage, setSourceStatusMessage] = useState<string | null>(null);
+
+  const normalizeServiceType = (serviceType?: string): 'facilities' | 'vigilancia' | 'unknown' => {
+    if (!serviceType) return 'facilities';
+    const normalized = serviceType
+      .normalize('NFD')
+      .replace(/[\u0300-\u036f]/g, '')
+      .toLowerCase()
+      .trim();
+
+    if (normalized.includes('vigil')) return 'vigilancia';
+    if (normalized.includes('facilit')) return 'facilities';
+    if (normalized === 'vigilancia') return 'vigilancia';
+    if (normalized === 'facilities') return 'facilities';
+
+    return 'unknown';
+  };
+
+  const isMissingTableError = (error: any) => {
+    const code = String(error?.code || '');
+    const message = String(error?.message || '');
+    return code === '42P01' || message.includes('does not exist');
+  };
+
+  const supportsLegacyBudgetsSchema = async (client: any): Promise<boolean> => {
+    const { error } = await client
+      .from('budget_functions')
+      .select('id')
+      .limit(1);
+
+    if (!error) return true;
+    if (isMissingTableError(error)) return false;
+    return true;
+  };
 
   useEffect(() => {
     loadBudgets();
@@ -70,21 +107,73 @@ export const NewBudgetTab = ({ activeBudget, onBudgetCreated, onBudgetUpdated, o
 
   const loadBudgets = async () => {
     setIsLoading(true);
-    const { data, error } = await supabase
-      .from('budgets')
-      .select('*')
-      .order('created_at', { ascending: false });
+    const candidates: Array<{ key: 'orcamentos' | 'comercial_privado'; label: string; client: any }> = [
+      { key: 'orcamentos', label: 'Orçamentos', client: supabase },
+    ];
 
-    if (error) {
-      console.error('Erro ao carregar orçamentos:', error);
+    if (supabaseClient && supabaseClient !== supabase) {
+      candidates.push({ key: 'comercial_privado', label: 'Comercial Privado', client: supabaseClient });
+    }
+
+    const sourceResults = await Promise.all(
+      candidates.map(async (source) => {
+        const [{ data, error }, legacyCompatible] = await Promise.all([
+          source.client
+            .from('budgets')
+            .select('*')
+            .order('created_at', { ascending: false }),
+          supportsLegacyBudgetsSchema(source.client),
+        ]);
+
+        return {
+          ...source,
+          data: Array.isArray(data) ? data : [],
+          error,
+          legacyCompatible,
+        };
+      })
+    );
+
+    const successfulSources = sourceResults.filter((source) => !source.error);
+
+    if (successfulSources.length === 0) {
+      const primaryError = sourceResults.find((source) => source.error)?.error;
+      console.error('Erro ao carregar orçamentos:', primaryError);
+      alert(`❌ Erro ao carregar orçamentos: ${primaryError?.message || 'Erro desconhecido'}`);
       setIsLoading(false);
       return;
     }
 
+    const compatibleSources = successfulSources.filter((source) => source.legacyCompatible);
+    const preferredPool = compatibleSources.length > 0 ? compatibleSources : successfulSources;
+
+    const selectedSource = preferredPool
+      .sort((a, b) => b.data.length - a.data.length)[0];
+
+    setBudgetsClientInUse(selectedSource.client);
+    setLegacySchemaAvailable(selectedSource.legacyCompatible);
+
+    const sourceSummary = successfulSources
+      .map((source) => `${source.label}: ${source.data.length}`)
+      .join(' | ');
+
+    if (!selectedSource.legacyCompatible) {
+      setSourceStatusMessage(`Fonte ativa: ${selectedSource.label}. Esquema de orçamento diferente detectado (${sourceSummary}).`);
+    } else if (successfulSources.length > 1) {
+      setSourceStatusMessage(`Dados detectados em múltiplas bases (${sourceSummary}). Exibindo ${selectedSource.label} por compatibilidade.`);
+    } else {
+      setSourceStatusMessage(`Fonte ativa: ${selectedSource.label} (${selectedSource.data.length} orçamentos).`);
+    }
+
+    const data = selectedSource.data.map((budget: any) => ({
+      ...budget,
+      _sourceKey: selectedSource.key,
+    }));
+
     if (data) {
       const budgetsWithTotals = await Promise.all(
         data.map(async (budget) => {
-          const { data: functions, error: funcError } = await supabase
+          const { data: functions, error: funcError } = await selectedSource.client
             .from('budget_functions')
             .select('*')
             .eq('budget_id', budget.id);
@@ -94,7 +183,7 @@ export const NewBudgetTab = ({ activeBudget, onBudgetCreated, onBudgetUpdated, o
             return { ...budget, total_value: 0, functions_count: 0, has_proposal: false };
           }
 
-          const { data: calculation } = await supabase
+          const { data: calculation } = await selectedSource.client
             .from('budget_calculations')
             .select('total_contract')
             .eq('budget_id', budget.id)
@@ -104,7 +193,7 @@ export const NewBudgetTab = ({ activeBudget, onBudgetCreated, onBudgetUpdated, o
 
           // Verifica se existe proposta vinculada a este orçamento
           // Usa o cliente Supabase do Comercial Privado se fornecido
-          const clientToUse = supabaseClient || supabase;
+          const clientToUse = supabaseClient || selectedSource.client;
           const { data: proposal } = await clientToUse
             .from('proposals')
             .select('id, client')
@@ -115,7 +204,8 @@ export const NewBudgetTab = ({ activeBudget, onBudgetCreated, onBudgetUpdated, o
             budget_id: budget.id,
             has_proposal: !!proposal,
             proposal_found: proposal,
-            using_external_client: !!supabaseClient
+            using_external_client: !!supabaseClient,
+            source: selectedSource.label,
           });
 
           return {
@@ -135,12 +225,17 @@ export const NewBudgetTab = ({ activeBudget, onBudgetCreated, onBudgetUpdated, o
   };
 
   const loadBudgetFunctions = async (budgetId: string) => {
+    if (!legacySchemaAvailable) {
+      alert('Este orçamento está em uma base com esquema diferente e não pode ser aberto neste módulo atual.');
+      return;
+    }
+
     if (budgetFunctions[budgetId]) {
       setExpandedBudget(expandedBudget === budgetId ? null : budgetId);
       return;
     }
 
-    const { data: calculation } = await supabase
+    const { data: calculation } = await budgetsClientInUse
       .from('budget_calculations')
       .select('function_data')
       .eq('budget_id', budgetId)
@@ -163,6 +258,11 @@ export const NewBudgetTab = ({ activeBudget, onBudgetCreated, onBudgetUpdated, o
   };
 
   const handleLoadBudget = async (budget: Budget) => {
+    if (!legacySchemaAvailable) {
+      alert('Este orçamento está em uma base com esquema diferente e não pode ser carregado no fluxo atual.');
+      return;
+    }
+
     onBudgetCreated(
       budget.id,
       budget.budget_number,
@@ -223,10 +323,14 @@ export const NewBudgetTab = ({ activeBudget, onBudgetCreated, onBudgetUpdated, o
 
   const handleCopyBudget = async () => {
     if (!budgetToCopy) return;
+    if (!legacySchemaAvailable) {
+      alert('Cópia indisponível para orçamento com esquema diferente do módulo atual.');
+      return;
+    }
 
     setIsCopying(true);
     try {
-      const { data, error } = await supabase.rpc('copy_budget_as_new', {
+      const { data, error } = await budgetsClientInUse.rpc('copy_budget_as_new', {
         p_original_budget_id: budgetToCopy.id,
         p_new_client_name: null,
         p_new_description: null,
@@ -243,7 +347,7 @@ export const NewBudgetTab = ({ activeBudget, onBudgetCreated, onBudgetUpdated, o
       const newBudgetId = data;
 
       // Buscar o novo orçamento criado
-      const { data: newBudget, error: fetchError } = await supabase
+      const { data: newBudget, error: fetchError } = await budgetsClientInUse
         .from('budgets')
         .select('*')
         .eq('id', newBudgetId)
@@ -285,21 +389,25 @@ export const NewBudgetTab = ({ activeBudget, onBudgetCreated, onBudgetUpdated, o
 
   const filteredBudgets = budgets.filter((budget) => {
     const search = searchTerm.toLowerCase();
+    const budgetNumber = String(budget.budget_number ?? '').toLowerCase();
+    const clientName = String(budget.client_name ?? '').toLowerCase();
+    const description = String(budget.description ?? '').toLowerCase();
     const matchesSearch = (
-      budget.budget_number.toLowerCase().includes(search) ||
-      budget.client_name.toLowerCase().includes(search) ||
-      budget.description?.toLowerCase().includes(search)
+      budgetNumber.includes(search) ||
+      clientName.includes(search) ||
+      description.includes(search)
     );
-    const matchesType = serviceFilter.includes(budget.service_type || 'facilities');
+    const normalizedType = normalizeServiceType(budget.service_type);
+    const matchesType = normalizedType === 'unknown' ? true : serviceFilter.includes(normalizedType);
     return matchesSearch && matchesType;
   });
 
   const facilitiesTotalValue = budgets
-    .filter((b) => (b.service_type || 'facilities') === 'facilities')
+    .filter((b) => normalizeServiceType(b.service_type) === 'facilities')
     .reduce((acc, b) => acc + (budgetFunctionTotals[b.id] || 0), 0);
 
   const vigilanciaTotalValue = budgets
-    .filter((b) => b.service_type === 'vigilancia')
+    .filter((b) => normalizeServiceType(b.service_type) === 'vigilancia')
     .reduce((acc, b) => acc + (budgetFunctionTotals[b.id] || 0), 0);
 
   // Cálculo dos indicadores
@@ -318,19 +426,19 @@ export const NewBudgetTab = ({ activeBudget, onBudgetCreated, onBudgetUpdated, o
   });
 
   const facilitiesThisMonth = budgetsThisMonth
-    .filter((b) => (b.service_type || 'facilities') === 'facilities')
+    .filter((b) => normalizeServiceType(b.service_type) === 'facilities')
     .reduce((acc, b) => acc + (b.total_value || 0), 0);
 
   const facilitiesThisYear = budgetsThisYear
-    .filter((b) => (b.service_type || 'facilities') === 'facilities')
+    .filter((b) => normalizeServiceType(b.service_type) === 'facilities')
     .reduce((acc, b) => acc + (b.total_value || 0), 0);
 
   const vigilanciaThisMonth = budgetsThisMonth
-    .filter((b) => b.service_type === 'vigilancia')
+    .filter((b) => normalizeServiceType(b.service_type) === 'vigilancia')
     .reduce((acc, b) => acc + (b.total_value || 0), 0);
 
   const vigilanciaThisYear = budgetsThisYear
-    .filter((b) => b.service_type === 'vigilancia')
+    .filter((b) => normalizeServiceType(b.service_type) === 'vigilancia')
     .reduce((acc, b) => acc + (b.total_value || 0), 0);
 
   // Calcular dias desde o último orçamento
@@ -490,6 +598,12 @@ export const NewBudgetTab = ({ activeBudget, onBudgetCreated, onBudgetUpdated, o
       )}
 
       <div className="bg-white rounded-lg shadow-md border border-slate-200 p-6">
+        {sourceStatusMessage && (
+          <div className="mb-4 px-4 py-3 rounded-lg border border-blue-200 bg-blue-50 text-blue-800 text-sm">
+            {sourceStatusMessage}
+          </div>
+        )}
+
         <div className="flex items-center justify-between mb-6">
           <h2 className="text-2xl font-bold text-slate-800">
             Orçamentos Salvos
@@ -550,22 +664,33 @@ export const NewBudgetTab = ({ activeBudget, onBudgetCreated, onBudgetUpdated, o
             {filteredBudgets.map((budget) => (
               <div key={budget.id} className="border border-slate-200 rounded-lg overflow-hidden">
                 <div className="flex items-center justify-between p-4 bg-slate-50 hover:bg-slate-100 transition-colors">
-                  <div className="flex-1 cursor-pointer" onClick={() => loadBudgetFunctions(budget.id)}>
+                  <div
+                    className={`flex-1 ${legacySchemaAvailable ? 'cursor-pointer' : 'cursor-not-allowed opacity-80'}`}
+                    onClick={() => legacySchemaAvailable && loadBudgetFunctions(budget.id)}
+                  >
                     <div className="flex items-center gap-3 mb-2">
+                      {(() => {
+                        const normalizedType = normalizeServiceType(budget.service_type);
+                        const isFacilities = normalizedType !== 'vigilancia';
+                        return (
+                          <>
                       <span className="px-3 py-1 bg-blue-600 text-white text-xs font-bold rounded-full">
                         {budget.budget_number}
                       </span>
                       <span
                         className={`px-3 py-1 text-xs font-semibold rounded-full ${
-                          (budget.service_type || 'facilities') === 'facilities'
+                          isFacilities
                             ? 'bg-blue-100 text-blue-700 border border-blue-200'
                             : 'bg-amber-100 text-amber-700 border border-amber-200'
                         }`}
                       >
-                        {(budget.service_type || 'facilities') === 'facilities'
+                        {isFacilities
                           ? 'Facilities'
                           : 'Vigilância'}
                       </span>
+                          </>
+                        );
+                      })()}
                       {activeBudget?.id === budget.id && (
                         <span className="px-3 py-1 bg-green-100 text-green-800 text-xs font-semibold rounded-full">
                           Ativo
@@ -609,7 +734,12 @@ export const NewBudgetTab = ({ activeBudget, onBudgetCreated, onBudgetUpdated, o
                   <div className="flex items-center gap-2">
                     <button
                       onClick={() => handleOpenCopyModal(budget)}
-                      className="flex items-center gap-2 px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white font-semibold rounded-md transition-colors text-sm"
+                      disabled={!legacySchemaAvailable}
+                      className={`flex items-center gap-2 px-4 py-2 text-white font-semibold rounded-md transition-colors text-sm ${
+                        legacySchemaAvailable
+                          ? 'bg-indigo-600 hover:bg-indigo-700'
+                          : 'bg-slate-400 cursor-not-allowed'
+                      }`}
                       title="Copiar este orçamento"
                     >
                       <Copy size={16} />
@@ -619,6 +749,7 @@ export const NewBudgetTab = ({ activeBudget, onBudgetCreated, onBudgetUpdated, o
                       <>
                         <button
                           onClick={() => handlePrintProposal(budget)}
+                          disabled={!legacySchemaAvailable}
                           className="flex items-center gap-2 px-4 py-2 bg-slate-600 hover:bg-slate-700 text-white font-semibold rounded-md transition-colors text-sm"
                           title="Imprimir Proposta"
                         >
@@ -627,6 +758,7 @@ export const NewBudgetTab = ({ activeBudget, onBudgetCreated, onBudgetUpdated, o
                         </button>
                         <button
                           onClick={() => handleGenerateProposal(budget)}
+                          disabled={!legacySchemaAvailable}
                           className={`flex items-center gap-2 px-4 py-2 font-semibold rounded-md transition-colors text-sm ${
                             budget.has_proposal
                               ? 'bg-orange-600 hover:bg-orange-700 text-white'
@@ -642,14 +774,24 @@ export const NewBudgetTab = ({ activeBudget, onBudgetCreated, onBudgetUpdated, o
                     {activeBudget?.id !== budget.id && (
                       <button
                         onClick={() => handleLoadBudget(budget)}
-                        className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-md transition-colors text-sm"
+                        disabled={!legacySchemaAvailable}
+                        className={`px-4 py-2 text-white font-semibold rounded-md transition-colors text-sm ${
+                          legacySchemaAvailable
+                            ? 'bg-blue-600 hover:bg-blue-700'
+                            : 'bg-slate-400 cursor-not-allowed'
+                        }`}
                       >
                         Carregar
                       </button>
                     )}
                     <button
-                      onClick={() => loadBudgetFunctions(budget.id)}
-                      className="p-2 text-slate-600 hover:bg-slate-200 rounded-full transition-colors"
+                      onClick={() => legacySchemaAvailable && loadBudgetFunctions(budget.id)}
+                      disabled={!legacySchemaAvailable}
+                      className={`p-2 rounded-full transition-colors ${
+                        legacySchemaAvailable
+                          ? 'text-slate-600 hover:bg-slate-200'
+                          : 'text-slate-400 cursor-not-allowed'
+                      }`}
                     >
                       {expandedBudget === budget.id ? (
                         <ChevronUp size={20} />
@@ -775,11 +917,11 @@ export const NewBudgetTab = ({ activeBudget, onBudgetCreated, onBudgetUpdated, o
                     {budgetToCopy.budget_number}
                   </span>
                   <span className={`px-3 py-1 text-xs font-semibold rounded-full ${
-                    (budgetToCopy.service_type || 'facilities') === 'facilities'
+                    normalizeServiceType(budgetToCopy.service_type) !== 'vigilancia'
                       ? 'bg-blue-100 text-blue-700'
                       : 'bg-amber-100 text-amber-700'
                   }`}>
-                    {(budgetToCopy.service_type || 'facilities') === 'facilities' ? 'Facilities' : 'Vigilância'}
+                    {normalizeServiceType(budgetToCopy.service_type) !== 'vigilancia' ? 'Facilities' : 'Vigilância'}
                   </span>
                 </div>
                 <p className="text-lg font-bold text-slate-800">{budgetToCopy.client_name}</p>

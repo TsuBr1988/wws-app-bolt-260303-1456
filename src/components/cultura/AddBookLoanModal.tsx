@@ -1,10 +1,12 @@
 import { useState, FormEvent } from 'react';
 import { X, BookOpen } from 'lucide-react';
-import { supabase } from '../../lib/supabase';
+import { getDatabase } from '../../lib/databaseResolver';
 import { Button } from '../ui/button';
 import { Input } from '../ui/input';
 import { useToast } from '../ui/use-toast';
 import SearchablePersonSelect from './SearchablePersonSelect';
+
+const supabase = getDatabase('CULTURA');
 
 interface AddBookLoanModalProps {
   isOpen: boolean;

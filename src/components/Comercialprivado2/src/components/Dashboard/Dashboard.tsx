@@ -30,12 +30,14 @@ import { PossibleCommissions } from './PossibleCommissions';
 import { ChallengesAndRewardsCard } from './ChallengesAndRewardsCard';
 import { ProspectionKPICard } from './ProspectionKPICard';
 import { CommercialGoalCard } from './CommercialGoalCard';
+import { StrategicKPICard } from './StrategicKPICard';
 
 import { useSupabaseQuery } from '../../hooks/useSupabase';
 import { useYear } from '../../contexts/YearContext';
 
 export const Dashboard: React.FC = () => {
   const { selectedYear } = useYear();
+  const showProspectionKPIs = false;
   
   // Global loading state for dashboard initialization
   const { loading: proposalsLoading } = useSupabaseQuery('proposals');
@@ -72,7 +74,11 @@ export const Dashboard: React.FC = () => {
 
       {/* ==================== KPIs DE PROSPECÇÃO ==================== */}
       {/* Indicadores de prospecção: Conexões, Taxa, Reuniões, MQL, SQL, Clientes */}
-      <ProspectionKPICard />
+      {showProspectionKPIs && <ProspectionKPICard />}
+
+      {/* ==================== KPI ESTRATÉGICO ==================== */}
+      {/* Contratos fechados (ano selecionado) com margem ponderada e faixas */}
+      <StrategicKPICard />
 
       {/* ==================== CONTROLE DE VENDAS MENSAL ==================== */}
       {/* Acompanhamento mensal da meta comercial: Meta vs Realizado por mês */}
