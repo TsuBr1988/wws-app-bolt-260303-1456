@@ -1,23 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import {
-  BookOpen,
-  ClipboardList,
-  FileCheck,
-  FileText,
-  Shield,
-  Wrench,
-  Pencil,
-  Plus,
-  ArrowLeft,
-  Database,
-  Table,
-  BarChart,
-  Scale,
-  FileSignature,
-  Gavel,
-  ChevronRight,
-  Loader2,
-} from 'lucide-react';
+import { BookOpen, ClipboardList, FileCheck, FileText, Shield, Wrench, Pencil, Plus, ArrowLeft, Database, Table, ChartBar as BarChart, Scale, Signature as FileSignature, Gavel, ChevronRight, Loader as Loader2 } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import { useToast } from '@/components/ui/use-toast';
 import * as qualidadeService from '@/services/qualidadeService';
