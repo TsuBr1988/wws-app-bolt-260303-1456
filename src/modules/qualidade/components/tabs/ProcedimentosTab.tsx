@@ -1,17 +1,27 @@
-import React, { useMemo, useState } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import {
   BookOpen,
   ClipboardList,
   FileCheck,
   FileText,
-  GitBranch,
-  Pencil,
-  Plus,
-  Settings,
   Shield,
   Wrench,
+  Pencil,
+  Plus,
+  ArrowLeft,
+  Database,
+  Table,
+  BarChart,
+  Scale,
+  FileSignature,
+  Gavel,
+  ChevronRight,
+  Loader2,
 } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
+import { useToast } from '@/components/ui/use-toast';
+import * as qualidadeService from '@/services/qualidadeService';
+import type { ProcedimentoDepartamento, ProcedimentoPasta } from '@/services/qualidadeService';
 
 type DepartmentIcon = 'book-open' | 'settings' | 'clipboard-list' | 'shield' | 'wrench' | 'git-branch' | 'file-text';
 
@@ -25,6 +35,7 @@ interface ProcedureDepartment {
 interface ProcedureItem {
   id: string;
   departmentId: string;
+  pastaId: string;
   elaboradoPor: string;
   tipo: string;
   nomeProcedimento?: string;
@@ -46,13 +57,6 @@ interface ProcedureIndicatorRow {
   metrica: string;
   periodicidade: string;
 }
-
-interface StoredState {
-  departments: ProcedureDepartment[];
-  procedures: ProcedureItem[];
-}
-
-const STORAGE_KEY = 'qualidade_procedimentos_state_v1';
 
 const ELABORADO_POR_OPTIONS = [
   'Gustavo Suzigan',
@@ -78,50 +82,45 @@ const DETAILED_TIPOS = new Set([
   'Manuais Operacionais',
 ]);
 
-const DEFAULT_DEPARTMENTS: ProcedureDepartment[] = [
-  {
-    id: 'departamento-qualidade',
-    name: 'Qualidade',
-    icon: 'file-text',
-    description: 'Documentação e controles da área da Qualidade',
-  },
-];
-
 const iconByKey: Record<DepartmentIcon, React.ComponentType<{ className?: string }>> = {
   'book-open': BookOpen,
-  settings: Settings,
+  'settings': Shield,
   'clipboard-list': ClipboardList,
-  shield: Shield,
-  wrench: Wrench,
-  'git-branch': GitBranch,
+  'shield': Shield,
+  'wrench': Wrench,
+  'git-branch': FileText,
   'file-text': FileText,
 };
 
-const loadStoredState = (): StoredState => {
-  try {
-    const raw = localStorage.getItem(STORAGE_KEY);
-    if (!raw) return { departments: DEFAULT_DEPARTMENTS, procedures: [] };
-    const parsed = JSON.parse(raw) as StoredState;
-    return {
-      departments: Array.isArray(parsed.departments) && parsed.departments.length > 0 ? parsed.departments : DEFAULT_DEPARTMENTS,
-      procedures: Array.isArray(parsed.procedures) ? parsed.procedures : [],
-    };
-  } catch {
-    return { departments: DEFAULT_DEPARTMENTS, procedures: [] };
-  }
-};
-
-const saveStoredState = (state: StoredState) => {
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+const iconBySlug: Record<string, React.ComponentType<{ className?: string }>> = {
+  'FileText': FileText,
+  'Wrench': Wrench,
+  'Shield': Shield,
+  'BookOpen': BookOpen,
+  'ClipboardList': ClipboardList,
+  'Database': Database,
+  'Table': Table,
+  'BarChart': BarChart,
+  'Scale': Scale,
+  'FileSignature': FileSignature,
+  'Gavel': Gavel,
 };
 
 const ProcedimentosTab: React.FC = () => {
   const { user, canEditIndicator } = useAuth();
-  const initialState = useMemo(() => loadStoredState(), []);
+  const { toast } = useToast();
 
-  const [departments, setDepartments] = useState<ProcedureDepartment[]>(initialState.departments);
-  const [procedures, setProcedures] = useState<ProcedureItem[]>(initialState.procedures);
+  const [currentView, setCurrentView] = useState<'departments' | 'folders' | 'procedures'>('departments');
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const [departments, setDepartments] = useState<ProcedimentoDepartamento[]>([]);
+  const [folders, setFolders] = useState<ProcedimentoPasta[]>([]);
+  const [procedures, setProcedures] = useState<qualidadeService.Procedimento[]>([]);
+
   const [selectedDepartmentId, setSelectedDepartmentId] = useState<string | null>(null);
+  const [selectedFolderId, setSelectedFolderId] = useState<string | null>(null);
 
   const [showDepartmentForm, setShowDepartmentForm] = useState(false);
   const [editingDepartmentId, setEditingDepartmentId] = useState<string | null>(null);
@@ -151,18 +150,74 @@ const ProcedimentosTab: React.FC = () => {
   const canCreateProcedure = isAdmin || isQualityManager;
   const canEditProcedure = isAdmin || isQualityManager;
 
-  const selectedDepartment = departments.find((d) => d.id === selectedDepartmentId) ?? null;
+  const selectedDepartment = useMemo(
+    () => departments.find((d) => d.id === selectedDepartmentId) ?? null,
+    [departments, selectedDepartmentId]
+  );
+
+  const selectedFolder = useMemo(
+    () => folders.find((f) => f.id === selectedFolderId) ?? null,
+    [folders, selectedFolderId]
+  );
+
   const showDetailedFields = DETAILED_TIPOS.has(tipo);
 
-  const selectedDepartmentProcedures = useMemo(() => {
-    if (!selectedDepartmentId) return [];
-    return procedures
-      .filter((p) => p.departmentId === selectedDepartmentId)
-      .sort((a, b) => b.createdAt.localeCompare(a.createdAt));
-  }, [selectedDepartmentId, procedures]);
+  useEffect(() => {
+    loadDepartments();
+  }, []);
 
-  const persistState = (nextDepartments: ProcedureDepartment[], nextProcedures: ProcedureItem[]) => {
-    saveStoredState({ departments: nextDepartments, procedures: nextProcedures });
+  const loadDepartments = async () => {
+    setLoading(true);
+    setError(null);
+    const result = await qualidadeService.getDepartamentos();
+    if (result.success && result.data) {
+      setDepartments(result.data);
+    } else {
+      setError(result.error || 'Erro ao carregar departamentos');
+    }
+    setLoading(false);
+  };
+
+  const handleSelectDepartment = async (departmentId: string) => {
+    setSelectedDepartmentId(departmentId);
+    setCurrentView('folders');
+    setLoading(true);
+    setError(null);
+
+    const result = await qualidadeService.getPastasWithCount(departmentId);
+    if (result.success && result.data) {
+      setFolders(result.data);
+    } else {
+      setError(result.error || 'Erro ao carregar pastas');
+    }
+    setLoading(false);
+  };
+
+  const handleSelectFolder = async (folderId: string) => {
+    setSelectedFolderId(folderId);
+    setCurrentView('procedures');
+    setLoading(true);
+    setError(null);
+
+    const result = await qualidadeService.getProcedimentosByPasta(folderId);
+    if (result.success && result.data) {
+      setProcedures(result.data);
+    } else {
+      setError(result.error || 'Erro ao carregar procedimentos');
+    }
+    setLoading(false);
+  };
+
+  const handleGoBack = () => {
+    if (currentView === 'procedures') {
+      setCurrentView('folders');
+      setSelectedFolderId(null);
+      setProcedures([]);
+    } else if (currentView === 'folders') {
+      setCurrentView('departments');
+      setSelectedDepartmentId(null);
+      setFolders([]);
+    }
   };
 
   const resetDepartmentForm = () => {
@@ -181,70 +236,53 @@ const ProcedimentosTab: React.FC = () => {
     setShowDepartmentForm(true);
   };
 
-  const openEditDepartmentForm = (department: ProcedureDepartment) => {
+  const openEditDepartmentForm = (department: ProcedimentoDepartamento) => {
     setEditingDepartmentId(department.id);
     setDepartmentName(department.name);
-    setDepartmentIcon(department.icon);
-    setDepartmentDescription(department.description);
+    setDepartmentIcon((department.icon as DepartmentIcon) || 'file-text');
+    setDepartmentDescription(department.description || '');
     setShowDepartmentForm(true);
   };
 
-  const handleSaveDepartment = () => {
+  const handleSaveDepartment = async () => {
     if (!canEditDepartment) return;
-    if (!departmentName.trim() || !departmentDescription.trim()) return;
+    if (!departmentName.trim() || !departmentDescription.trim()) {
+      toast({ title: 'Erro', description: 'Preencha todos os campos obrigatórios', variant: 'destructive' });
+      return;
+    }
 
-    let nextDepartments: ProcedureDepartment[];
+    setSaving(true);
     if (editingDepartmentId) {
-      nextDepartments = departments.map((d) =>
-        d.id === editingDepartmentId
-          ? {
-              ...d,
-              name: departmentName.trim(),
-              icon: departmentIcon,
-              description: departmentDescription.trim(),
-            }
-          : d
-      );
-    } else {
-      if (!canCreateDepartment) return;
-      const created: ProcedureDepartment = {
-        id: crypto.randomUUID(),
+      const result = await qualidadeService.updateDepartamento(editingDepartmentId, {
         name: departmentName.trim(),
         icon: departmentIcon,
         description: departmentDescription.trim(),
-      };
-      nextDepartments = [...departments, created];
+      });
+
+      if (result.success) {
+        toast({ title: 'Sucesso', description: 'Departamento atualizado com sucesso' });
+        await loadDepartments();
+        resetDepartmentForm();
+      } else {
+        toast({ title: 'Erro', description: result.error || 'Erro ao atualizar departamento', variant: 'destructive' });
+      }
+    } else {
+      if (!canCreateDepartment) return;
+      const result = await qualidadeService.createDepartamento({
+        name: departmentName.trim(),
+        icon: departmentIcon,
+        description: departmentDescription.trim(),
+      });
+
+      if (result.success) {
+        toast({ title: 'Sucesso', description: 'Departamento criado com sucesso! As 11 pastas padrão foram criadas automaticamente.' });
+        await loadDepartments();
+        resetDepartmentForm();
+      } else {
+        toast({ title: 'Erro', description: result.error || 'Erro ao criar departamento', variant: 'destructive' });
+      }
     }
-
-    setDepartments(nextDepartments);
-    persistState(nextDepartments, procedures);
-    resetDepartmentForm();
-  };
-
-  const handleAddProcedure = () => {
-    if (!selectedDepartmentId) return;
-
-    const created: ProcedureItem = {
-      id: crypto.randomUUID(),
-      departmentId: selectedDepartmentId,
-      elaboradoPor,
-      tipo,
-      nomeProcedimento: showDetailedFields ? nomeProcedimento.trim() : undefined,
-      objetivos: showDetailedFields ? objetivos.trim() : undefined,
-      documentosRelacionados: showDetailedFields ? documentosRelacionados.trim() : undefined,
-      definicoes: showDetailedFields ? definicoes.trim() : undefined,
-      responsabilidades: showDetailedFields ? responsabilidades.trim() : undefined,
-      escopo: showDetailedFields ? escopo.trim() : undefined,
-      fluxoOperacionalizacao: showDetailedFields ? fluxoOperacionalizacao.trim() : undefined,
-      sistematica: showDetailedFields ? sistematica.trim() : undefined,
-      gestaoIndicadores: showDetailedFields ? gestaoIndicadores : undefined,
-      createdAt: new Date().toISOString(),
-    };
-
-    const nextProcedures = [...procedures, created];
-    setProcedures(nextProcedures);
-    persistState(departments, nextProcedures);
-    resetProcedureForm();
+    setSaving(false);
   };
 
   const resetProcedureForm = () => {
@@ -266,6 +304,8 @@ const ProcedimentosTab: React.FC = () => {
 
   const openCreateProcedureForm = () => {
     if (!canCreateProcedure) return;
+    if (!selectedFolderId) return;
+
     setProcedureFormMode('create');
     setEditingProcedureId(null);
     setElaboradoPor(ELABORADO_POR_OPTIONS[0]);
@@ -282,21 +322,35 @@ const ProcedimentosTab: React.FC = () => {
     setShowProcedureForm(true);
   };
 
-  const openViewProcedureForm = (procedure: ProcedureItem) => {
-    setProcedureFormMode('view');
-    setEditingProcedureId(procedure.id);
-    setElaboradoPor(procedure.elaboradoPor);
-    setTipo(procedure.tipo);
-    setNomeProcedimento(procedure.nomeProcedimento ?? '');
-    setObjetivos(procedure.objetivos ?? '');
-    setDocumentosRelacionados(procedure.documentosRelacionados ?? '');
-    setDefinicoes(procedure.definicoes ?? '');
-    setResponsabilidades(procedure.responsabilidades ?? '');
-    setEscopo(procedure.escopo ?? '');
-    setFluxoOperacionalizacao(procedure.fluxoOperacionalizacao ?? '');
-    setSistematica(procedure.sistematica ?? '');
-    setGestaoIndicadores(Array.isArray(procedure.gestaoIndicadores) ? procedure.gestaoIndicadores : []);
-    setShowProcedureForm(true);
+  const openViewProcedureForm = async (procedureId: string) => {
+    const result = await qualidadeService.getProcedimentoById(procedureId);
+    if (result.success && result.data) {
+      const procedure = result.data;
+      setProcedureFormMode('view');
+      setEditingProcedureId(procedure.id);
+      setElaboradoPor(procedure.elaborado_por);
+      setTipo(procedure.tipo);
+      setNomeProcedimento(procedure.nome_procedimento ?? '');
+      setObjetivos(procedure.objetivos ?? '');
+      setDocumentosRelacionados(procedure.documentos_relacionados ?? '');
+      setDefinicoes(procedure.definicoes ?? '');
+      setResponsabilidades(procedure.responsabilidades ?? '');
+      setEscopo(procedure.escopo ?? '');
+      setFluxoOperacionalizacao(procedure.fluxo_operacionalizacao ?? '');
+      setSistematica(procedure.sistematica ?? '');
+      setGestaoIndicadores(
+        (procedure.indicadores || []).map((ind) => ({
+          id: ind.id,
+          nomeIndicador: ind.nome_indicador,
+          oQueMede: ind.o_que_mede ?? '',
+          metrica: ind.metrica ?? '',
+          periodicidade: ind.periodicidade ?? '',
+        }))
+      );
+      setShowProcedureForm(true);
+    } else {
+      toast({ title: 'Erro', description: result.error || 'Erro ao carregar procedimento', variant: 'destructive' });
+    }
   };
 
   const switchToEditProcedureForm = () => {
@@ -305,41 +359,89 @@ const ProcedimentosTab: React.FC = () => {
     setProcedureFormMode('edit');
   };
 
-  const handleSaveProcedure = () => {
-    if (!selectedDepartmentId) return;
+  const handleSaveProcedure = async () => {
+    if (!selectedFolderId) return;
+
+    setSaving(true);
 
     if (procedureFormMode === 'create') {
       if (!canCreateProcedure) return;
-      handleAddProcedure();
-      return;
+
+      const result = await qualidadeService.createProcedimento({
+        departamento_id: selectedDepartmentId || undefined,
+        pasta_id: selectedFolderId,
+        elaborado_por: elaboradoPor,
+        tipo,
+        nome_procedimento: showDetailedFields ? nomeProcedimento.trim() : undefined,
+        objetivos: showDetailedFields ? objetivos.trim() : undefined,
+        documentos_relacionados: showDetailedFields ? documentosRelacionados.trim() : undefined,
+        definicoes: showDetailedFields ? definicoes.trim() : undefined,
+        responsabilidades: showDetailedFields ? responsabilidades.trim() : undefined,
+        escopo: showDetailedFields ? escopo.trim() : undefined,
+        fluxo_operacionalizacao: showDetailedFields ? fluxoOperacionalizacao.trim() : undefined,
+        sistematica: showDetailedFields ? sistematica.trim() : undefined,
+      });
+
+      if (result.success && result.data) {
+        if (showDetailedFields && gestaoIndicadores.length > 0) {
+          await qualidadeService.syncIndicadores(
+            result.data.id,
+            gestaoIndicadores.map((ind, idx) => ({
+              nome_indicador: ind.nomeIndicador,
+              o_que_mede: ind.oQueMede,
+              metrica: ind.metrica,
+              periodicidade: ind.periodicidade,
+              ordem: idx + 1,
+            }))
+          );
+        }
+
+        toast({ title: 'Sucesso', description: 'Procedimento criado com sucesso' });
+        await handleSelectFolder(selectedFolderId);
+        resetProcedureForm();
+      } else {
+        toast({ title: 'Erro', description: result.error || 'Erro ao criar procedimento', variant: 'destructive' });
+      }
+    } else if (procedureFormMode === 'edit' && editingProcedureId) {
+      if (!canEditProcedure) return;
+
+      const result = await qualidadeService.updateProcedimento(editingProcedureId, {
+        elaborado_por: elaboradoPor,
+        tipo,
+        nome_procedimento: showDetailedFields ? nomeProcedimento.trim() : undefined,
+        objetivos: showDetailedFields ? objetivos.trim() : undefined,
+        documentos_relacionados: showDetailedFields ? documentosRelacionados.trim() : undefined,
+        definicoes: showDetailedFields ? definicoes.trim() : undefined,
+        responsabilidades: showDetailedFields ? responsabilidades.trim() : undefined,
+        escopo: showDetailedFields ? escopo.trim() : undefined,
+        fluxo_operacionalizacao: showDetailedFields ? fluxoOperacionalizacao.trim() : undefined,
+        sistematica: showDetailedFields ? sistematica.trim() : undefined,
+      });
+
+      if (result.success) {
+        if (showDetailedFields) {
+          await qualidadeService.syncIndicadores(
+            editingProcedureId,
+            gestaoIndicadores.map((ind, idx) => ({
+              id: ind.id.startsWith('temp-') ? undefined : ind.id,
+              nome_indicador: ind.nomeIndicador,
+              o_que_mede: ind.oQueMede,
+              metrica: ind.metrica,
+              periodicidade: ind.periodicidade,
+              ordem: idx + 1,
+            }))
+          );
+        }
+
+        toast({ title: 'Sucesso', description: 'Procedimento atualizado com sucesso' });
+        await handleSelectFolder(selectedFolderId);
+        resetProcedureForm();
+      } else {
+        toast({ title: 'Erro', description: result.error || 'Erro ao atualizar procedimento', variant: 'destructive' });
+      }
     }
 
-    if (procedureFormMode !== 'edit') return;
-    if (!canEditProcedure) return;
-    if (!editingProcedureId) return;
-
-    const existing = procedures.find((p) => p.id === editingProcedureId);
-    if (!existing) return;
-
-    const updated: ProcedureItem = {
-      ...existing,
-      elaboradoPor,
-      tipo,
-      nomeProcedimento: showDetailedFields ? nomeProcedimento.trim() : undefined,
-      objetivos: showDetailedFields ? objetivos.trim() : undefined,
-      documentosRelacionados: showDetailedFields ? documentosRelacionados.trim() : undefined,
-      definicoes: showDetailedFields ? definicoes.trim() : undefined,
-      responsabilidades: showDetailedFields ? responsabilidades.trim() : undefined,
-      escopo: showDetailedFields ? escopo.trim() : undefined,
-      fluxoOperacionalizacao: showDetailedFields ? fluxoOperacionalizacao.trim() : undefined,
-      sistematica: showDetailedFields ? sistematica.trim() : undefined,
-      gestaoIndicadores: showDetailedFields ? gestaoIndicadores : undefined,
-    };
-
-    const nextProcedures = procedures.map((p) => (p.id === updated.id ? updated : p));
-    setProcedures(nextProcedures);
-    persistState(departments, nextProcedures);
-    resetProcedureForm();
+    setSaving(false);
   };
 
   const handleAddIndicadorRow = () => {
@@ -347,7 +449,7 @@ const ProcedimentosTab: React.FC = () => {
     setGestaoIndicadores((current) => [
       ...current,
       {
-        id: crypto.randomUUID(),
+        id: `temp-${Date.now()}`,
         nomeIndicador: '',
         oQueMede: '',
         metrica: '',
@@ -375,22 +477,30 @@ const ProcedimentosTab: React.FC = () => {
     );
   };
 
+  if (loading && currentView === 'departments') {
+    return (
+      <div className="px-10 py-6 flex items-center justify-center min-h-[400px]">
+        <Loader2 className="w-8 h-8 animate-spin text-brand-primary" />
+      </div>
+    );
+  }
+
   return (
     <div className="px-10 py-6 animate-fade-in pb-20">
-      {!selectedDepartment ? (
+      {currentView === 'departments' ? (
         <>
           <div className="flex items-center justify-between mb-8">
             <div>
               <h2 className="text-3xl font-bold text-brand-dark mb-2">Procedimentos, Instruções e Formulários</h2>
-              <p className="text-gray-600">Cards de departamento (categorias) e seus procedimentos</p>
+              <p className="text-gray-600">Selecione um departamento para visualizar suas pastas e procedimentos</p>
             </div>
             {canCreateDepartment && (
               <button
                 onClick={openCreateDepartmentForm}
-                className="flex items-center gap-2 px-6 py-3 bg-brand-dark text-white rounded-xl font-bold hover:bg-brand-graphite transition-all shadow-md hover:shadow-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-graphite/40"
+                className="flex items-center gap-2 px-6 py-3 bg-brand-dark text-white rounded-xl font-bold hover:bg-brand-graphite transition-all shadow-md hover:shadow-lg"
               >
                 <Plus className="w-5 h-5" />
-                Adicionar departamento
+                Adicionar Departamento
               </button>
             )}
           </div>
@@ -410,7 +520,9 @@ const ProcedimentosTab: React.FC = () => {
                   className="px-4 py-3 border border-gray-300 rounded-lg"
                 >
                   {Object.keys(iconByKey).map((key) => (
-                    <option key={key} value={key}>{key}</option>
+                    <option key={key} value={key}>
+                      {key}
+                    </option>
                   ))}
                 </select>
                 <input
@@ -421,14 +533,24 @@ const ProcedimentosTab: React.FC = () => {
                 />
               </div>
               <div className="flex justify-end gap-3 mt-4">
-                <button onClick={resetDepartmentForm} className="px-4 py-2 rounded-lg border border-gray-300 text-gray-700">Cancelar</button>
+                <button onClick={resetDepartmentForm} className="px-4 py-2 rounded-lg border border-gray-300 text-gray-700" disabled={saving}>
+                  Cancelar
+                </button>
                 <button
                   onClick={handleSaveDepartment}
-                  className="px-4 py-2 rounded-lg bg-brand-dark text-white font-semibold hover:bg-brand-graphite transition-all shadow-sm hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-graphite/40"
+                  disabled={saving}
+                  className="px-4 py-2 rounded-lg bg-brand-dark text-white font-semibold hover:bg-brand-graphite transition-all shadow-sm hover:shadow-md flex items-center gap-2"
                 >
+                  {saving && <Loader2 className="w-4 h-4 animate-spin" />}
                   {editingDepartmentId ? 'Salvar alterações' : 'Criar departamento'}
                 </button>
               </div>
+            </div>
+          )}
+
+          {error && (
+            <div className="bg-red-50 border border-red-200 rounded-xl p-4 mb-6 text-red-700">
+              {error}
             </div>
           )}
 
@@ -440,12 +562,12 @@ const ProcedimentosTab: React.FC = () => {
           ) : (
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
               {departments.map((department) => {
-                const Icon = iconByKey[department.icon] ?? FileText;
+                const Icon = iconByKey[(department.icon as DepartmentIcon) || 'file-text'] ?? FileText;
                 return (
                   <div key={department.id} className="bg-white rounded-xl p-6 border-2 border-gray-200 hover:shadow-lg transition-all">
                     <button
                       className="w-full text-left"
-                      onClick={() => setSelectedDepartmentId(department.id)}
+                      onClick={() => handleSelectDepartment(department.id)}
                     >
                       <div className="flex items-center gap-3 mb-3">
                         <div className="p-3 bg-brand-primary/10 rounded-xl text-brand-primary">
@@ -473,23 +595,90 @@ const ProcedimentosTab: React.FC = () => {
             </div>
           )}
         </>
+      ) : currentView === 'folders' ? (
+        <>
+          <div className="flex items-center justify-between mb-8">
+            <div>
+              <button
+                onClick={handleGoBack}
+                className="inline-flex items-center gap-2 text-sm text-brand-primary font-semibold mb-2 hover:underline"
+              >
+                <ArrowLeft className="w-4 h-4" />
+                Voltar para departamentos
+              </button>
+              <div className="flex items-center gap-2 text-sm text-gray-500 mb-2">
+                <span>Departamentos</span>
+                <ChevronRight className="w-4 h-4" />
+                <span className="text-brand-dark font-semibold">{selectedDepartment?.name}</span>
+              </div>
+              <h2 className="text-3xl font-bold text-brand-dark mb-2">{selectedDepartment?.name}</h2>
+              <p className="text-gray-600">Selecione uma pasta para visualizar seus procedimentos</p>
+            </div>
+          </div>
+
+          {loading ? (
+            <div className="flex items-center justify-center min-h-[200px]">
+              <Loader2 className="w-8 h-8 animate-spin text-brand-primary" />
+            </div>
+          ) : error ? (
+            <div className="bg-red-50 border border-red-200 rounded-xl p-4 text-red-700">
+              {error}
+            </div>
+          ) : folders.length === 0 ? (
+            <div className="bg-white p-8 rounded-xl shadow-sm border-2 border-gray-200 text-center">
+              <FileCheck className="w-16 h-16 text-gray-300 mx-auto mb-4" />
+              <p className="text-gray-500">Nenhuma pasta encontrada</p>
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+              {folders.map((folder) => {
+                const Icon = iconBySlug[folder.icone || 'FileText'] || FileText;
+                return (
+                  <button
+                    key={folder.id}
+                    onClick={() => handleSelectFolder(folder.id)}
+                    className="bg-white rounded-xl p-6 border-2 border-gray-200 hover:shadow-lg transition-all text-left"
+                  >
+                    <div className="flex items-center gap-3 mb-3">
+                      <div className="p-3 bg-brand-primary/10 rounded-xl text-brand-primary">
+                        <Icon className="w-6 h-6" />
+                      </div>
+                      <div>
+                        <h3 className="font-bold text-lg text-brand-dark">{folder.name}</h3>
+                        <p className="text-sm text-gray-500">{folder.procedimentos_count || 0} procedimento(s)</p>
+                      </div>
+                    </div>
+                  </button>
+                );
+              })}
+            </div>
+          )}
+        </>
       ) : (
         <>
           <div className="flex items-center justify-between mb-8">
             <div>
               <button
-                onClick={() => setSelectedDepartmentId(null)}
-                className="text-sm text-brand-primary font-semibold mb-2"
+                onClick={handleGoBack}
+                className="inline-flex items-center gap-2 text-sm text-brand-primary font-semibold mb-2 hover:underline"
               >
-                ← Voltar para departamentos
+                <ArrowLeft className="w-4 h-4" />
+                Voltar para pastas
               </button>
-              <h2 className="text-3xl font-bold text-brand-dark mb-2">{selectedDepartment.name}</h2>
-              <p className="text-gray-600">{selectedDepartment.description}</p>
+              <div className="flex items-center gap-2 text-sm text-gray-500 mb-2">
+                <span>Departamentos</span>
+                <ChevronRight className="w-4 h-4" />
+                <span>{selectedDepartment?.name}</span>
+                <ChevronRight className="w-4 h-4" />
+                <span className="text-brand-dark font-semibold">{selectedFolder?.name}</span>
+              </div>
+              <h2 className="text-3xl font-bold text-brand-dark mb-2">{selectedFolder?.name}</h2>
+              <p className="text-gray-600">Procedimentos cadastrados nesta pasta</p>
             </div>
             {canCreateProcedure && (
               <button
                 onClick={openCreateProcedureForm}
-                className="flex items-center gap-2 px-6 py-3 bg-brand-dark text-white rounded-xl font-bold hover:bg-brand-graphite transition-all shadow-md hover:shadow-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-graphite/40"
+                className="flex items-center gap-2 px-6 py-3 bg-brand-dark text-white rounded-xl font-bold hover:bg-brand-graphite transition-all shadow-md hover:shadow-lg"
               >
                 <Plus className="w-5 h-5" />
                 Novo Procedimento
@@ -504,22 +693,9 @@ const ProcedimentosTab: React.FC = () => {
                   <h3 className="text-xl font-bold text-brand-dark">
                     {procedureFormMode === 'create' ? 'Novo Procedimento' : procedureFormMode === 'edit' ? 'Editar Procedimento' : 'Detalhes do Procedimento'}
                   </h3>
-                  <p className="text-sm text-gray-600 mt-1">
-                    {procedureFormMode === 'create'
-                      ? 'Preencha os campos para registrar o procedimento'
-                      : procedureFormMode === 'edit'
-                        ? 'Atualize os campos e salve as alterações'
-                        : 'Visualização do procedimento cadastrado'}
-                  </p>
                 </div>
 
                 <div className="p-6 space-y-6">
-                  {procedureFormMode === 'view' && !canEditProcedure && (
-                    <div className="bg-gray-50 border border-gray-200 rounded-xl p-4">
-                      <p className="text-sm text-gray-700">Você pode visualizar este procedimento, mas não tem permissão para editar.</p>
-                    </div>
-                  )}
-
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
                       <label className="block text-sm text-gray-700 font-semibold mb-2">Elaborado por</label>
@@ -530,7 +706,9 @@ const ProcedimentosTab: React.FC = () => {
                         className="w-full px-4 py-3 border border-gray-300 rounded-lg"
                       >
                         {ELABORADO_POR_OPTIONS.map((opt) => (
-                          <option key={opt} value={opt}>{opt}</option>
+                          <option key={opt} value={opt}>
+                            {opt}
+                          </option>
                         ))}
                       </select>
                     </div>
@@ -543,7 +721,9 @@ const ProcedimentosTab: React.FC = () => {
                         className="w-full px-4 py-3 border border-gray-300 rounded-lg"
                       >
                         {TIPO_OPTIONS.map((opt) => (
-                          <option key={opt} value={opt}>{opt}</option>
+                          <option key={opt} value={opt}>
+                            {opt}
+                          </option>
                         ))}
                       </select>
                     </div>
@@ -614,7 +794,9 @@ const ProcedimentosTab: React.FC = () => {
                             <tbody>
                               {gestaoIndicadores.length === 0 ? (
                                 <tr>
-                                  <td colSpan={5} className="px-3 py-4 text-gray-500 text-center">Nenhuma linha adicionada</td>
+                                  <td colSpan={5} className="px-3 py-4 text-gray-500 text-center">
+                                    Nenhuma linha adicionada
+                                  </td>
                                 </tr>
                               ) : (
                                 gestaoIndicadores.map((row) => (
@@ -633,7 +815,9 @@ const ProcedimentosTab: React.FC = () => {
                                     </td>
                                     <td className="px-3 py-2 text-right">
                                       {procedureFormMode !== 'view' && (
-                                        <button onClick={() => handleRemoveIndicadorRow(row.id)} className="px-2 py-1 text-sm rounded-md border border-gray-300 text-gray-700 hover:bg-gray-50">Remover</button>
+                                        <button onClick={() => handleRemoveIndicadorRow(row.id)} className="px-2 py-1 text-sm rounded-md border border-gray-300 text-gray-700 hover:bg-gray-50">
+                                          Remover
+                                        </button>
                                       )}
                                     </td>
                                   </tr>
@@ -648,7 +832,7 @@ const ProcedimentosTab: React.FC = () => {
                 </div>
 
                 <div className="p-6 pt-0 flex justify-end gap-3">
-                  <button onClick={resetProcedureForm} className="px-4 py-2 rounded-lg border border-gray-300 text-gray-700">
+                  <button onClick={resetProcedureForm} className="px-4 py-2 rounded-lg border border-gray-300 text-gray-700" disabled={saving}>
                     {procedureFormMode === 'view' ? 'Fechar' : 'Cancelar'}
                   </button>
 
@@ -656,7 +840,7 @@ const ProcedimentosTab: React.FC = () => {
                     canEditProcedure ? (
                       <button
                         onClick={switchToEditProcedureForm}
-                        className="px-4 py-2 rounded-lg bg-brand-dark text-white font-semibold hover:bg-brand-graphite transition-all shadow-sm hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-graphite/40"
+                        className="px-4 py-2 rounded-lg bg-brand-dark text-white font-semibold hover:bg-brand-graphite transition-all shadow-sm hover:shadow-md"
                       >
                         Editar
                       </button>
@@ -664,8 +848,10 @@ const ProcedimentosTab: React.FC = () => {
                   ) : (
                     <button
                       onClick={handleSaveProcedure}
-                      className="px-4 py-2 rounded-lg bg-brand-dark text-white font-semibold hover:bg-brand-graphite transition-all shadow-sm hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-graphite/40"
+                      disabled={saving}
+                      className="px-4 py-2 rounded-lg bg-brand-dark text-white font-semibold hover:bg-brand-graphite transition-all shadow-sm hover:shadow-md flex items-center gap-2"
                     >
+                      {saving && <Loader2 className="w-4 h-4 animate-spin" />}
                       {procedureFormMode === 'edit' ? 'Salvar alterações' : 'Adicionar procedimento'}
                     </button>
                   )}
@@ -674,23 +860,37 @@ const ProcedimentosTab: React.FC = () => {
             </div>
           )}
 
-          {selectedDepartmentProcedures.length === 0 ? (
+          {loading ? (
+            <div className="flex items-center justify-center min-h-[200px]">
+              <Loader2 className="w-8 h-8 animate-spin text-brand-primary" />
+            </div>
+          ) : error ? (
+            <div className="bg-red-50 border border-red-200 rounded-xl p-4 text-red-700">
+              {error}
+            </div>
+          ) : procedures.length === 0 ? (
             <div className="bg-white p-8 rounded-xl shadow-sm border-2 border-gray-200 text-center">
               <FileCheck className="w-16 h-16 text-gray-300 mx-auto mb-4" />
-              <p className="text-gray-500">Nenhum procedimento cadastrado neste departamento</p>
+              <p className="text-gray-500">Nenhum procedimento cadastrado nesta pasta</p>
             </div>
           ) : (
             <div className="space-y-3">
-              {selectedDepartmentProcedures.map((item) => (
+              {procedures.map((item) => (
                 <button
                   key={item.id}
-                  onClick={() => openViewProcedureForm(item)}
+                  onClick={() => openViewProcedureForm(item.id)}
                   className="w-full text-left bg-white p-5 rounded-xl border border-gray-200 shadow-sm hover:shadow-md transition-shadow"
                 >
-                  <p className="text-sm text-gray-700"><b>Elaborado por:</b> {item.elaboradoPor}</p>
-                  <p className="text-sm text-gray-700 mt-1"><b>Tipo:</b> {item.tipo}</p>
-                  {item.nomeProcedimento && (
-                    <p className="text-sm text-gray-700 mt-1"><b>Nome do procedimento:</b> {item.nomeProcedimento}</p>
+                  <p className="text-sm text-gray-700">
+                    <b>Elaborado por:</b> {item.elaborado_por}
+                  </p>
+                  <p className="text-sm text-gray-700 mt-1">
+                    <b>Tipo:</b> {item.tipo}
+                  </p>
+                  {item.nome_procedimento && (
+                    <p className="text-sm text-gray-700 mt-1">
+                      <b>Nome do procedimento:</b> {item.nome_procedimento}
+                    </p>
                   )}
                 </button>
               ))}

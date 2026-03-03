@@ -180,3 +180,73 @@ export interface AtaAnaliseCritica {
   created_at: Date;
   updated_at: Date;
 }
+
+export type PastaSlug =
+  | 'procedimentos'
+  | 'instrucoes-trabalho'
+  | 'politicas'
+  | 'manuais'
+  | 'formularios'
+  | 'registros'
+  | 'planilhas'
+  | 'relatorios'
+  | 'normas-externas'
+  | 'contratos'
+  | 'documentos-legais';
+
+export interface ProcedimentoPasta {
+  id: string;
+  departamento_id: string;
+  name: string;
+  slug: PastaSlug;
+  icone?: string;
+  ordem: number;
+  created_at: string;
+  updated_at: string;
+  procedimentos_count?: number;
+}
+
+export interface ProcedureIndicatorRow {
+  id: string;
+  nomeIndicador: string;
+  oQueMede: string;
+  metrica: string;
+  periodicidade: string;
+}
+
+export interface ProcedureItem {
+  id: string;
+  departmentId: string;
+  pastaId: string;
+  elaboradoPor: string;
+  tipo: string;
+  nomeProcedimento?: string;
+  objetivos?: string;
+  documentosRelacionados?: string;
+  definicoes?: string;
+  responsabilidades?: string;
+  escopo?: string;
+  fluxoOperacionalizacao?: string;
+  sistematica?: string;
+  gestaoIndicadores?: ProcedureIndicatorRow[];
+  createdAt: string;
+}
+
+export const PASTAS_PADRAO_CONFIG: Array<{
+  name: string;
+  slug: PastaSlug;
+  icone: string;
+  ordem: number;
+}> = [
+  { name: 'Procedimentos', slug: 'procedimentos', icone: 'FileText', ordem: 1 },
+  { name: 'Instruções de Trabalho', slug: 'instrucoes-trabalho', icone: 'Wrench', ordem: 2 },
+  { name: 'Políticas', slug: 'politicas', icone: 'Shield', ordem: 3 },
+  { name: 'Manuais', slug: 'manuais', icone: 'BookOpen', ordem: 4 },
+  { name: 'Formulários', slug: 'formularios', icone: 'ClipboardList', ordem: 5 },
+  { name: 'Registros', slug: 'registros', icone: 'Database', ordem: 6 },
+  { name: 'Planilhas', slug: 'planilhas', icone: 'Table', ordem: 7 },
+  { name: 'Relatórios', slug: 'relatorios', icone: 'BarChart', ordem: 8 },
+  { name: 'Normas Externas', slug: 'normas-externas', icone: 'Scale', ordem: 9 },
+  { name: 'Contratos', slug: 'contratos', icone: 'FileSignature', ordem: 10 },
+  { name: 'Documentos Legais', slug: 'documentos-legais', icone: 'Gavel', ordem: 11 },
+];
