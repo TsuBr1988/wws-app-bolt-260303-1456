@@ -84,17 +84,13 @@ export async function createDepartamento(data: {
   description?: string;
 }): Promise<ServiceResponse<ProcedimentoDepartamento>> {
   try {
-    // Construir objeto apenas com campos definidos
     const insertData: Record<string, any> = {
       name: data.name,
+      description: data.description || '',
     };
 
     if (data.icon !== undefined) {
       insertData.icon = data.icon;
-    }
-
-    if (data.description !== undefined) {
-      insertData.description = data.description;
     }
 
     const { data: departamento, error } = await supabase
