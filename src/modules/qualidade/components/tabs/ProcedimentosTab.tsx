@@ -107,7 +107,6 @@ const ProcedimentosTab: React.FC = () => {
   const [showDepartmentForm, setShowDepartmentForm] = useState(false);
   const [editingDepartmentId, setEditingDepartmentId] = useState<string | null>(null);
   const [departmentName, setDepartmentName] = useState('');
-  const [departmentIcon, setDepartmentIcon] = useState<DepartmentIcon>('file-text');
   const [departmentDescription, setDepartmentDescription] = useState('');
 
   const [showProcedureForm, setShowProcedureForm] = useState(false);
@@ -204,7 +203,6 @@ const ProcedimentosTab: React.FC = () => {
 
   const resetDepartmentForm = () => {
     setDepartmentName('');
-    setDepartmentIcon('file-text');
     setDepartmentDescription('');
     setEditingDepartmentId(null);
     setShowDepartmentForm(false);
@@ -213,7 +211,6 @@ const ProcedimentosTab: React.FC = () => {
   const openCreateDepartmentForm = () => {
     setEditingDepartmentId(null);
     setDepartmentName('');
-    setDepartmentIcon('file-text');
     setDepartmentDescription('');
     setShowDepartmentForm(true);
   };
@@ -221,7 +218,6 @@ const ProcedimentosTab: React.FC = () => {
   const openEditDepartmentForm = (department: ProcedimentoDepartamento) => {
     setEditingDepartmentId(department.id);
     setDepartmentName(department.name);
-    setDepartmentIcon((department.icon as DepartmentIcon) || 'file-text');
     setDepartmentDescription(department.description || '');
     setShowDepartmentForm(true);
   };
@@ -237,7 +233,6 @@ const ProcedimentosTab: React.FC = () => {
     if (editingDepartmentId) {
       const result = await qualidadeService.updateDepartamento(editingDepartmentId, {
         name: departmentName.trim(),
-        icon: departmentIcon,
         description: departmentDescription.trim(),
       });
 
@@ -252,7 +247,6 @@ const ProcedimentosTab: React.FC = () => {
       if (!canCreateDepartment) return;
       const result = await qualidadeService.createDepartamento({
         name: departmentName.trim(),
-        icon: departmentIcon,
         description: departmentDescription.trim(),
       });
 
@@ -489,24 +483,13 @@ const ProcedimentosTab: React.FC = () => {
 
           {showDepartmentForm && (
             <div className="bg-white p-6 rounded-xl border-2 border-gray-200 shadow-sm mb-6">
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <input
                   value={departmentName}
                   onChange={(e) => setDepartmentName(e.target.value)}
                   placeholder="Nome do departamento"
                   className="px-4 py-3 border border-gray-300 rounded-lg"
                 />
-                <select
-                  value={departmentIcon}
-                  onChange={(e) => setDepartmentIcon(e.target.value as DepartmentIcon)}
-                  className="px-4 py-3 border border-gray-300 rounded-lg"
-                >
-                  {Object.keys(iconByKey).map((key) => (
-                    <option key={key} value={key}>
-                      {key}
-                    </option>
-                  ))}
-                </select>
                 <input
                   value={departmentDescription}
                   onChange={(e) => setDepartmentDescription(e.target.value)}
